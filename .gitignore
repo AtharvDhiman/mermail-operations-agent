@@ -13,3 +13,8 @@ npm-debug.log*
 # OS specific
 .DS_Store
 Thumbs.db
+
+# Runtime data
+data/*.json
+!data/.gitkeep
+
