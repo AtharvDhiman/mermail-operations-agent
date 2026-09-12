@@ -1,6 +1,6 @@
 ---
 name: mermail-relayer-sentinel
-description: Monitor mission-critical Web3 relayer and paymaster gas deficit alerts in Mermail, verify allowlisted addresses and daily caps, propose PayBox token swaps and gas transfers with human authorization, and deliver auditable settlement receipts. Use for relayer gas replenishment and multi-chain treasury liquidity operations; isolated wallet inspection, general email drafting, and unverified address transfers stay with their focused workflows.
+description: Monitor Web3 relayer and paymaster gas deficit alerts in Mermail, verify allowlisted addresses and daily caps, propose PayBox token swaps and gas transfers with human authorization, and deliver auditable settlement receipts. Use for relayer gas replenishment and multi-chain treasury liquidity operations; isolated wallet inspection, general email drafting, and unverified address transfers stay with their focused workflows.
 metadata:
   openclaw:
     requires:

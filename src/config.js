@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -41,3 +41,25 @@ export function loadConfig(options = {}) {
     relayers: allowlist.relayers || []
   };
 }
+
+export function saveConfig(updates, options = {}) {
+  const allowlistPath = options.allowlistPath || process.env.SENTINEL_ALLOWLIST_PATH || path.join(rootDir, 'config', 'relayers.json');
+  
+  let current = { version: '1.0.0', policy: {}, relayers: [] };
+  if (existsSync(allowlistPath)) {
+    try {
+      current = JSON.parse(readFileSync(allowlistPath, 'utf8'));
+    } catch (_) {}
+  }
+
+  if (updates.policy) {
+    current.policy = { ...current.policy, ...updates.policy };
+  }
+  if (Array.isArray(updates.relayers)) {
+    current.relayers = updates.relayers;
+  }
+
+  writeFileSync(allowlistPath, JSON.stringify(current, null, 2), 'utf8');
+  return current;
+}
+

@@ -1,120 +1,120 @@
-# 🏛️ Technical Architecture: Mermail Relayer Sentinel
+# System Architecture: Mermail Relayer Sentinel
 
-This document provides the in-depth system specification, state machine design, and integration mechanics for `mermail-relayer-sentinel`.
-
----
-
-## 1. System Overview
-
-`mermail-relayer-sentinel` is an autonomous Web3 operations agent designed to monitor, triage, and rebalance execution relayers and paymasters across multiple blockchains (Solana, Base, Ethereum).
-
-It acts as an autonomous bridge between **external Web3 alerting infrastructure** (Helius, Tenderly, or custom RPC health checks) and **Mermail's Agent Wallet / PayBox infrastructure**, executing strictly within predefined risk and security boundaries.
+This document describes the technical architecture, state machine, and data flow of the `mermail-relayer-sentinel` agent skill.
 
 ---
 
-## 2. Six-Phase Autonomous State Machine
+## 1. Overview
 
-The agent operates as a deterministic, finite state machine across six sequential phases:
+`mermail-relayer-sentinel` connects external alert pipelines (Helius webhooks, Tenderly alerts, and monitoring emails) to Mermail's Agent Wallet / PayBox execution tools. It parses inbound deficit notices, verifies the target contract against a static allowlist, checks on-chain and treasury balances, and prepares signed top-up transactions with dual-control authorization.
+
+---
+
+## 2. Six-Phase State Machine
+
+The service transitions through six deterministic states:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Phase1_Detection: Inbound Deficit Alert Received
-    Phase1_Detection --> Phase2_Triage: Alert Parsed & Sanitized
-    Phase2_Triage --> Quarantined: Security Violation or Invalid Target
-    Phase2_Triage --> Phase3_Liquidity: Allowlist & Deficit Verified
-    Phase3_Liquidity --> Phase4_Approval: Sufficient Treasury Reserves
-    Phase3_Liquidity --> Stalled: Insufficient Treasury Funds
-    Phase4_Approval --> Phase5_Execution: Human Operator Authorizes
-    Phase4_Approval --> Cancelled: Operator Rejects
-    Phase5_Execution --> Phase6_Settlement: PayBox Transfer Broadcast
-    Phase6_Settlement --> [*]: Receipt Delivered to Thread
+    [*] --> Phase1_Detection: Inbound Deficit Alert
+    Phase1_Detection --> Phase2_Triage: Sanitized & Parsed
+    Phase2_Triage --> Quarantined: Validation Failure or Unallowlisted
+    Phase2_Triage --> Phase3_Liquidity: Allowlist Verified
+    Phase3_Liquidity --> Phase4_Approval: Treasury Capital Verified
+    Phase3_Liquidity --> Stalled: Insufficient Balance
+    Phase4_Approval --> Phase5_Execution: Operator Confirmed
+    Phase4_Approval --> Cancelled: Operator Rejection
+    Phase5_Execution --> Phase6_Settlement: PayBox Broadcast
+    Phase6_Settlement --> [*]: Receipt Dispatched to Thread
 ```
 
-### Phase 1: Inbound Web3 Alert Detection
-- **Trigger**: New email arriving in the designated Mermail monitoring inbox (`mbx_ops_sentinel_01`).
-- **Tool Calls**:
-  - `list_mailboxes`: Discover operational mailbox ID.
-  - `list_emails`: Query unread messages sorted by date descending (`{ isRead: false, limit: 5 }`).
-  - `get_email`: Fetch the complete alert body, headers, and metadata.
-- **Contract**: Inbound email content is classified as untrusted input. The agent strictly parses key-value metrics (`Relayer ID`, `Current Balance`, `Network`, `Target Address`).
+### Phase 1: Alert Ingestion
+- **Trigger**: New message in the monitored Mermail mailbox or incoming POST payload to `/api/webhooks/*`.
+- **MCP Calls**:
+  - `list_mailboxes`: Resolves the active mailbox identifier.
+  - `list_emails`: Queries unread messages sorted by timestamp descending.
+  - `get_email`: Retrieves body text and headers.
+- **Contract**: Inbound content is treated as untrusted data. The parser extracts key-value pairs (Relayer ID, Network, Address, Balance) and discards imperative instructions.
 
-### Phase 2: Relayer Discovery & Security Triage
+### Phase 2: Security Validation & Deficit Calculation
 - **Actions**:
-  1. **Prompt Injection Sanitization**: Strips adversarial prompt manipulation patterns (`sanitizeEmailContent`).
-  2. **Address Syntax Verification**:
-     - Solana: Base58 encoding check (excludes `0`, `O`, `I`, `l`, length 32–44 chars).
-     - EVM (Base/Ethereum): 0x-prefixed 40-character hex regex.
-  3. **Allowlist Matching**: Looks up target address in `config/relayers.json`. If not matched or marked `enabled: false`, immediate rejection occurs.
-  4. **Deficit Calculus**:
+  1. Input Sanitization: Strips prompt injection tokens (`sanitizePromptInjection`).
+  2. Address Validation: Verifies syntax (Solana Base58 alphabet without `0, O, I, l`; EVM 40-character hex with `0x` prefix).
+  3. Allowlist Lookup: Checks `config/relayers.json` for an active matching record. Unmatched addresses trigger immediate quarantine.
+  4. Deficit Calculation:
      $$\text{Shortfall} = \max(0, \text{TargetBalance} - \text{CurrentBalance}) \times \text{BufferMultiplier}$$
-     Default `BufferMultiplier` is $1.25$ ($25\%$ safety margin to cover volatile gas spikes).
-  5. **Risk & Cap Validation**:
-     - Verifies single-transaction cap (e.g. $\le \$150\text{ USD}$).
-     - Queries `DailyBudgetTracker` to verify 24-hour rolling cap (e.g. $\le \$500\text{ USD}$).
+     The default multiplier is $1.25$ to absorb gas price volatility.
+  5. Budget Verification: Checks that the proposed top-up does not exceed the single-transaction cap or the rolling 24-hour aggregate budget.
 
-### Phase 3: PayBox Treasury Liquidity Probe
-- **Tool Calls**:
-  - `get_paybox_connection`: Asserts status is `ACTIVE`. If disconnected, halts with signing handoff link.
-  - `paybox_get_portfolio`: Inspects current balances across chains.
-- **Routing Decision**:
-  - If native gas asset (e.g. SOL) balance $\ge \text{ProposedTopUp}$, selects `DIRECT_TRANSFER`.
-  - If native gas asset is deficient but treasury has sufficient `USDC`, plans `SWAP_THEN_TRANSFER`.
-  - If total reserves are insufficient, halts and posts an `INSUFFICIENT_TREASURY_FUNDS` incident brief.
+### Phase 3: Treasury Liquidity & Route Selection
+- **MCP Calls**:
+  - `get_paybox_connection`: Asserts that the PayBox connection status is `ACTIVE`.
+  - `paybox_get_portfolio`: Queries available token balances.
+- **Routing**:
+  - If the native gas balance covers the shortfall: `DIRECT_TRANSFER`.
+  - If native gas is deficient but treasury USDC is sufficient: `SWAP_THEN_TRANSFER`.
+  - If total reserves cannot cover the amount: Halts with an `INSUFFICIENT_TREASURY_FUNDS` record.
 
-### Phase 4: Dual-Control Operator Approval Gate
-- **Enforcement**: External-effect and financial write operations are **never executed autonomously**.
-- **Deliverable**: Outputs a structured, immutable Replenishment Preview containing:
-  - Target relayer identity and verified address.
-  - Calculated deficit and proposed top-up quantity.
-  - Current treasury balances and execution route (`DIRECT_TRANSFER` or `SWAP_THEN_TRANSFER`).
-  - 24-hour budget consumption status.
-- **Gate**: Requires operator confirmation (`--auto-approve` flag supported only in automated test/devnet harnesses).
+### Phase 4: Operator Approval Gate
+- **Enforcement**: Financial disbursements are never executed unilaterally.
+- **Deliverable**: Generates a structured preview containing:
+  - Target relayer identity and verified address
+  - Calculated deficit and recommended replenishment amount
+  - Available treasury liquidity and selected route
+  - Current daily budget utilization
+- **Gate**: Requires explicit human operator confirmation via CLI or web dashboard.
 
-### Phase 5: PayBox Disbursement & Signing Handoff
-- **Tool Calls**:
-  - If swap route: `paybox_request_swap` ({ chain, fromToken: 'USDC', toToken: 'SOL', fromAmount }).
-  - `paybox_request_transfer`: Dispatches the on-chain transfer request ({ chain, token, amount, destinationAddress }).
-- **Signing Flow**: PayBox returns a deep-link URL (`signing_handoff.console_url`). The operator or delegated signing service authorizes the transaction via browser or hardware wallet.
+### Phase 5: PayBox Transfer & Signing
+- **MCP Calls**:
+  - If swap route: `paybox_request_swap`.
+  - `paybox_request_transfer`: Dispatches the transfer request.
+- **Signing**: PayBox returns a console signing deep-link (`signing_handoff.console_url`). Signing is completed securely via browser or hardware wallet.
 
-### Phase 6: On-Chain Settlement & Verifiable Receipt
-- **Tool Calls**:
-  - `paybox_get_request`: Polls for transaction finality and extracts on-chain transaction hash (`txHash`).
-  - `reply_to_email`: Sends an operational settlement receipt directly to the alert email thread.
-  - `save_draft`: Saves a comprehensive treasury audit entry in the workspace mailbox.
-  - `update_email`: Sets `isRead: true` on the alert email to clear the incident queue.
+### Phase 6: Settlement & Audit Logging
+- **MCP Calls**:
+  - `paybox_get_request`: Confirms transaction finality and on-chain transaction hash.
+  - `reply_to_email`: Sends an operational receipt to the original alert email thread.
+  - `save_draft`: Records an audit draft in the Mermail workspace.
+  - `update_email`: Sets `isRead: true` on the alert to clear the queue.
+- **History**: Appends the completed transaction to `data/history.json`.
 
 ---
 
-## 3. Data Flow & Interface Contracts
+## 3. Configuration Schema
 
-### Relayer Registry Schema (`config/relayers.json`)
-```typescript
-interface RelayerDefinition {
-  id: string;              // e.g. "solana-mainnet-relayer-01"
-  name: string;            // e.g. "Jupiter DEX Execution Relayer"
-  chain: "solana" | "base" | "ethereum";
-  asset: "SOL" | "ETH";
-  address: string;         // Cryptographically verified on-chain address
-  threshold: number;       // Gas balance below which alerts fire (e.g. 0.100 SOL)
-  targetBalance: number;   // Normal operating balance (e.g. 0.500 SOL)
-  maxSingleTopUp: number;  // Hard single-transaction safety ceiling
-  enabled: boolean;        // Instant kill-switch per relayer
+Relayers are configured in `config/relayers.json`:
+
+```json
+{
+  "version": "1.0.0",
+  "policy": {
+    "maxDailyTopUpUsd": 500.0,
+    "maxSingleTopUpUsd": 150.0,
+    "requireHumanConfirmation": true,
+    "defaultGasBufferMultiplier": 1.25,
+    "allowlistedChains": ["solana", "base", "ethereum"]
+  },
+  "relayers": [
+    {
+      "id": "solana-mainnet-relayer-01",
+      "name": "Jupiter DEX Execution Relayer",
+      "chain": "solana",
+      "token": "SOL",
+      "address": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+      "minThreshold": 0.1,
+      "targetBalance": 0.5,
+      "maxSingleTopUp": 1.0,
+      "alertEmailSender": "alerts@helius.dev",
+      "enabled": true
+    }
+  ]
 }
 ```
 
-### PayBox Integration Parity
-Sentinel relies directly on Mermail's official PayBox MCP interface tools:
-- `get_paybox_connection`: Live connection probe.
-- `paybox_get_portfolio`: Treasury asset enumeration.
-- `paybox_request_transfer`: Non-destructive write initiating transfer.
-- `paybox_request_swap`: Cross-asset liquidity conversion.
-- `paybox_get_request`: Status reconciliation and transaction hash retrieval.
-
 ---
 
-## 4. Fault Tolerance & Edge Cases
+## 4. Error Handling and Recovery
 
-1. **Stale or Duplicate Alerts**: If an alert email arrives for an incident already processed within the last 15 minutes, Sentinel recognizes the existing transaction and avoids double-spending.
-2. **RPC Network Congestion**: If gas fees surge unexpectedly, the 25% buffer prevents immediate follow-up deficit triggers.
-3. **PayBox Disconnection**: If the workspace owner's OAuth token expires, Sentinel outputs the exact `connect_handoff.console_url` without crashing.
-4. **Transient Failures**: Idempotent request IDs (`req_tx_<timestamp>`) prevent duplicate transfers during network retries.
+- **Stale Alerts**: Incidents processed within the last 15 minutes are de-duplicated using request IDs to prevent duplicate disbursements.
+- **RPC Timeouts**: On-chain balance lookups fall back gracefully if public RPC endpoints are rate-limited.
+- **Token Disconnection**: If OAuth expires, the service reports the PayBox reconnection link and pauses write operations.

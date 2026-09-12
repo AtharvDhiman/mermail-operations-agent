@@ -3,565 +3,761 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mermail Relayer Sentinel — Live Web3 Mission Control</title>
+  <title>Mermail Relayer Sentinel — Operations Console</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #080a11;
-      --card-bg: #0f1322;
-      --card-border: #1e2640;
-      --card-hover: #181f36;
-      --accent-solana: #9945FF;
-      --accent-solana-teal: #14F195;
-      --accent-blue: #0088ff;
-      --accent-warning: #ffb703;
-      --accent-danger: #ff3366;
-      --text-main: #f3f4f6;
-      --text-muted: #8b9bb4;
-      --mono-font: 'JetBrains Mono', monospace;
-      --sans-font: 'Outfit', sans-serif;
+      --bg: #09090b;
+      --card-bg: #111114;
+      --border: #27272a;
+      --border-hover: #3f3f46;
+      --text: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --text-dim: #71717a;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      font-family: var(--sans-font);
-      min-height: 100vh;
-      overflow-x: hidden;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
     }
 
-    /* Ambient glow */
-    .glow-bg {
-      position: fixed;
-      top: -150px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 900px;
-      height: 400px;
-      background: radial-gradient(circle, rgba(153,69,255,0.15) 0%, rgba(20,241,149,0.08) 50%, transparent 70%);
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    /* Header */
+    /* Top Navigation Bar */
     header {
-      position: relative;
-      z-index: 10;
-      border-bottom: 1px solid var(--card-border);
-      background: rgba(15, 19, 34, 0.7);
-      backdrop-filter: blur(16px);
-      padding: 16px 28px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .brand {
+    .brand-row {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
-    .brand-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--accent-solana), var(--accent-solana-teal));
+    .brand-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.2px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .header-meta {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      box-shadow: 0 0 20px rgba(153, 69, 255, 0.4);
+      gap: 16px;
     }
 
-    .brand-text h1 {
-      font-size: 19px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .brand-text p {
+    .meta-item {
       font-size: 12px;
       color: var(--text-muted);
-      font-family: var(--mono-font);
+      font-family: var(--mono);
+    }
+    .meta-item strong { color: var(--text); font-weight: 500; }
+
+    /* Action bar */
+    .action-bar {
+      background: #0d0d10;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
-    .badge-pill {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 8px;
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 6px 14px;
       border-radius: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
     }
-    .badge-live { background: rgba(20, 241, 149, 0.15); color: var(--accent-solana-teal); border: 1px solid rgba(20, 241, 149, 0.3); }
-    .badge-cap { background: rgba(153, 69, 255, 0.15); color: var(--accent-solana); border: 1px solid rgba(153, 69, 255, 0.3); }
+    .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+    .tab-btn.active { background: #1c1c21; color: var(--text); border-color: var(--border); }
 
-    .header-stats {
+    .action-group {
       display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-
-    .stat-pill {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      padding: 8px 14px;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .stat-pill .label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-family: var(--mono-font); }
-    .stat-pill .value { font-size: 13px; font-weight: 600; font-family: var(--mono-font); color: #fff; }
-
-    /* Control Bar */
-    .controls-bar {
-      position: relative;
-      z-index: 10;
-      padding: 16px 28px;
-      display: flex;
-      gap: 12px;
-      background: rgba(8, 10, 17, 0.8);
-      border-bottom: 1px solid var(--card-border);
+      gap: 8px;
       align-items: center;
     }
 
+    /* Buttons */
     .btn {
       background: var(--card-bg);
-      color: var(--text-main);
-      border: 1px solid var(--card-border);
-      padding: 9px 16px;
-      border-radius: 8px;
-      font-family: var(--sans-font);
-      font-size: 13px;
-      font-weight: 600;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      transition: all 0.2s ease;
+      gap: 6px;
+      transition: all 0.15s ease;
     }
-    .btn:hover { background: var(--card-hover); border-color: #3b486d; }
-    .btn-primary { background: linear-gradient(135deg, #7928ca, #4338ca); border: none; color: #fff; box-shadow: 0 4px 14px rgba(121, 40, 202, 0.4); }
-    .btn-primary:hover { opacity: 0.95; transform: translateY(-1px); }
-    .btn-sim-alert { background: rgba(255, 183, 3, 0.12); color: var(--accent-warning); border-color: rgba(255, 183, 3, 0.3); }
-    .btn-sim-alert:hover { background: rgba(255, 183, 3, 0.2); }
-    .btn-sim-attack { background: rgba(255, 51, 102, 0.12); color: var(--accent-danger); border-color: rgba(255, 51, 102, 0.3); }
-    .btn-sim-attack:hover { background: rgba(255, 51, 102, 0.2); }
+    .btn:hover { background: #1a1a20; border-color: var(--border-hover); }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-danger { color: var(--danger); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.15); }
+    .btn-sm { padding: 4px 8px; font-size: 11px; }
 
-    /* Layout */
-    .container {
-      position: relative;
-      z-index: 10;
-      padding: 24px 28px;
+    /* Content Layout */
+    .main-content {
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Overview metric cards */
+    .metrics-row {
       display: grid;
-      grid-template-columns: 1fr 1.2fr 1.2fr;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .metric-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; font-family: var(--mono); }
+    .metric-value { font-size: 24px; font-weight: 700; color: var(--text); margin-top: 4px; font-family: var(--mono); }
+    .metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: var(--mono); }
+
+    /* Tables */
+    .data-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-title { font-size: 14px; font-weight: 600; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+    th {
+      background: #0d0d10;
+      color: var(--text-dim);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-family: var(--mono);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #1a1a20;
+      color: var(--text);
+    }
+    tr:hover td { background: rgba(255,255,255,0.015); }
+    .mono-cell { font-family: var(--mono); font-size: 12px; }
+
+    /* Triage split layout */
+    .triage-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
       gap: 20px;
     }
 
-    .panel {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-    }
-
-    .panel-header {
-      padding: 14px 18px;
-      border-bottom: 1px solid var(--card-border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(15, 19, 34, 0.5);
-    }
-    .panel-title {
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .panel-count {
-      font-family: var(--mono-font);
-      font-size: 11px;
-      background: #1c2438;
-      padding: 2px 8px;
-      border-radius: 12px;
-      color: var(--text-muted);
-    }
-
-    .panel-body {
-      padding: 16px;
-      flex: 1;
-      overflow-y: auto;
-      max-height: 520px;
-    }
-
-    /* Relayer Cards */
-    .relayer-card {
-      background: #13182b;
-      border: 1px solid #232b45;
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 12px;
-      transition: all 0.2s ease;
-    }
-    .relayer-card:hover { border-color: #3f4c75; background: #171d33; }
-    .relayer-card.status-danger { border-left: 4px solid var(--accent-danger); }
-    .relayer-card.status-normal { border-left: 4px solid var(--accent-solana-teal); }
-
-    .rc-head {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      align-items: flex-start;
-    }
-    .rc-name { font-size: 13px; font-weight: 700; color: #fff; }
-    .rc-chain { font-size: 10px; font-family: var(--mono-font); padding: 2px 6px; border-radius: 4px; background: #1d253d; text-transform: uppercase; }
-    .rc-addr { font-family: var(--mono-font); font-size: 11px; color: var(--text-muted); margin-bottom: 10px; word-break: break-all; }
-    
-    .rc-balance-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      margin-bottom: 6px;
-      font-family: var(--mono-font);
-    }
-    .gauge-bg {
-      height: 6px;
-      background: #20273d;
-      border-radius: 3px;
-      overflow: hidden;
-      position: relative;
-    }
-    .gauge-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
-
-    /* Email Items */
-    .email-item {
-      background: #13182b;
-      border: 1px solid #232b45;
-      border-radius: 8px;
+    .email-row {
+      background: #151518;
+      border: 1px solid var(--border);
+      border-radius: 6px;
       padding: 12px;
       margin-bottom: 10px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
     }
-    .email-item:hover { border-color: var(--accent-solana); background: #181f36; }
-    .email-item.attack { border-color: rgba(255, 51, 102, 0.4); background: rgba(255, 51, 102, 0.05); }
-    .email-top { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
-    .email-subject { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 6px; }
-    .email-preview { font-size: 11px; color: var(--text-muted); font-family: var(--mono-font); line-height: 1.4; }
+    .email-row:hover { border-color: var(--accent); background: #1a1a20; }
+    .email-row.selected { border-color: var(--accent); background: #1e1e26; }
+    .email-row-head { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); font-family: var(--mono); margin-bottom: 4px; }
+    .email-row-subj { font-weight: 600; font-size: 13px; margin-bottom: 4px; color: #fff; }
+    .email-row-snip { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
 
-    /* Proposal Card */
-    .preview-box {
-      background: #080a11;
-      border: 1px solid #262f4d;
+    .preview-pre {
+      background: #09090b;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #93c5fd;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-family: var(--mono);
+    }
+    .form-input {
+      width: 100%;
+      background: #09090b;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 13px;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* Console terminal */
+    .log-terminal {
+      background: #070709;
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 14px;
-      font-family: var(--mono-font);
+      font-family: var(--mono);
       font-size: 12px;
-      line-height: 1.6;
-      margin-bottom: 14px;
-      white-space: pre-wrap;
-      color: #7dd3fc;
-    }
-
-    /* Terminal Logs */
-    .terminal-panel {
-      position: relative;
-      z-index: 10;
-      margin: 0 28px 28px 28px;
-      background: #07090e;
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    .terminal-head {
-      background: #0d111d;
-      padding: 10px 16px;
-      font-size: 12px;
-      font-family: var(--mono-font);
-      color: var(--text-muted);
-      border-bottom: 1px solid var(--card-border);
-      display: flex;
-      justify-content: space-between;
-    }
-    .terminal-body {
-      padding: 14px;
-      font-family: var(--mono-font);
-      font-size: 12px;
-      color: #94a3b8;
-      max-height: 180px;
+      color: #a1a1aa;
+      height: 160px;
       overflow-y: auto;
       line-height: 1.5;
     }
-    .log-line { margin-bottom: 4px; }
-    .log-time { color: #475569; }
-    .log-info { color: #38bdf8; }
-    .log-success { color: #4ade80; }
-    .log-warn { color: #fbbf24; }
-    .log-error { color: #f87171; }
+    .log-line { margin-bottom: 3px; }
+    .log-time { color: var(--text-dim); }
 
-    /* Security Radar list */
-    .sec-item {
-      display: flex;
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100;
       align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 520px;
+      max-width: 95vw;
+      padding: 24px;
+    }
+    .modal-head {
+      display: flex;
       justify-content: space-between;
-      padding: 8px 12px;
-      background: #13182b;
-      border: 1px solid #232b45;
-      border-radius: 6px;
-      margin-bottom: 8px;
-      font-size: 12px;
-      font-family: var(--mono-font);
+      align-items: center;
+      margin-bottom: 18px;
     }
   </style>
 </head>
 <body>
-  <div class="glow-bg"></div>
 
-  <!-- Header -->
+  <!-- Top Header -->
   <header>
-    <div class="brand">
-      <div class="brand-icon">🛡️</div>
-      <div class="brand-text">
-        <h1>Mermail Relayer Sentinel <span class="badge-pill badge-live">Live Sentinel Active</span></h1>
-        <p>Autonomous Web3 Relayer Gas Monitoring & Treasury Rebalancing</p>
-      </div>
+    <div class="brand-row">
+      <span class="brand-title">Mermail Relayer Sentinel</span>
+      <span class="status-badge"><span class="status-dot"></span> Sentinel Active</span>
     </div>
-    <div class="header-stats">
-      <div class="stat-pill">
-        <span class="label">Mailbox Scope</span>
-        <span class="value" id="header-mailbox">mbx_ops_sentinel_01</span>
-      </div>
-      <div class="stat-pill">
-        <span class="label">PayBox Connection</span>
-        <span class="value" style="color: var(--accent-solana-teal);">ACTIVE (Operator)</span>
-      </div>
-      <div class="stat-pill">
-        <span class="label">24h Budget Cap</span>
-        <span class="value" id="header-budget">$500.00 USD</span>
-      </div>
+    <div class="header-meta">
+      <div class="meta-item">Mailbox: <strong id="hdr-mailbox">mbx_ops_sentinel_01</strong></div>
+      <div class="meta-item">PayBox: <strong id="hdr-paybox" style="color: var(--success);">Connected</strong></div>
+      <div class="meta-item">Daily Cap: <strong id="hdr-cap">$500.00 USD</strong></div>
     </div>
   </header>
 
-  <!-- Controls Bar -->
-  <div class="controls-bar">
-    <button class="btn btn-primary" onclick="triggerScan()">🔍 Scan Inbox & Triage</button>
-    <button class="btn btn-sim-alert" onclick="simulateAlert()">⚠️ Trigger Helius Deficit Alert (0.045 SOL)</button>
-    <button class="btn btn-sim-attack" onclick="simulateAttack()">🚨 Test Adversarial Prompt Injection</button>
-    <button class="btn" onclick="fetchState()">🔄 Refresh Balances</button>
-    <span id="scan-status" style="font-size: 12px; color: var(--text-muted); font-family: var(--mono-font); margin-left: 8px;"></span>
-  </div>
-
-  <!-- Main Tri-Column Layout -->
-  <div class="container">
-    <!-- Col 1: Allowlisted Relayer Radar -->
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">📡 Allowlisted Relayers Radar</div>
-        <div class="panel-count" id="relayer-count">3 Registered</div>
-      </div>
-      <div class="panel-body" id="relayers-container">
-        <!-- Relayers will render here -->
-      </div>
+  <!-- Navigation and Actions -->
+  <div class="action-bar">
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('relayers')">Relayers & Balances</button>
+      <button class="tab-btn" onclick="switchTab('inbox')">Alerts & Triage</button>
+      <button class="tab-btn" onclick="switchTab('history')">Audit History</button>
+      <button class="tab-btn" onclick="switchTab('settings')">Risk Policy</button>
     </div>
 
-    <!-- Col 2: Mermail Inbox Feed -->
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">📬 Mermail Inbound Alerts</div>
-        <div class="panel-count" id="emails-count">Loading...</div>
-      </div>
-      <div class="panel-body" id="emails-container">
-        <!-- Inbound emails will render here -->
-      </div>
-    </div>
-
-    <!-- Col 3: Proposal & Execution Console -->
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">⚡ Treasury Operations Console</div>
-        <div class="panel-count" id="console-status">Dual-Control Gate</div>
-      </div>
-      <div class="panel-body">
-        <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">
-          Zero-Trust Security Radar
-        </div>
-        <div class="sec-item">
-          <span>Prompt-Injection Defense</span>
-          <span style="color: var(--accent-solana-teal);">✔ ACTIVE</span>
-        </div>
-        <div class="sec-item">
-          <span>Base58 / EVM Format Guard</span>
-          <span style="color: var(--accent-solana-teal);">✔ VERIFIED</span>
-        </div>
-        <div class="sec-item">
-          <span>Daily Cap Enforcement</span>
-          <span style="color: var(--accent-solana-teal);">$500 Limit OK</span>
-        </div>
-
-        <div style="margin-top: 16px; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">
-          Transaction Proposal Preview
-        </div>
-        <div class="preview-box" id="preview-content">Awaiting triage or alert selection...</div>
-
-        <div id="action-buttons" style="display: none;">
-          <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px;" onclick="approveReplenishment()">
-            🔐 Authorize & Execute PayBox Transfer
-          </button>
-        </div>
-
-        <div id="settlement-box" style="display: none; margin-top: 14px; background: rgba(20, 241, 149, 0.1); border: 1px solid rgba(20, 241, 149, 0.3); padding: 12px; border-radius: 8px; font-size: 12px; font-family: var(--mono-font);">
-          <div style="color: var(--accent-solana-teal); font-weight: 700; margin-bottom: 4px;">✅ SETTLED ON-CHAIN (Solana Mainnet)</div>
-          <div id="settlement-details" style="color: #fff; word-break: break-all;"></div>
-        </div>
-      </div>
+    <div class="action-group">
+      <button class="btn btn-primary" onclick="scanInbox()">Scan Inbox</button>
+      <button class="btn" onclick="simulateAlert('solana', 0.042)">Trigger Low Gas Alert</button>
+      <button class="btn btn-danger" onclick="simulateAttack()">Test Prompt Injection</button>
+      <button class="btn" onclick="refreshAll()">Refresh</button>
     </div>
   </div>
 
-  <!-- Bottom Log Terminal -->
-  <div class="terminal-panel">
-    <div class="terminal-head">
-      <span>🖥️ SENTINEL AUDIT & LIVE MCP LOG STREAM</span>
-      <span style="color: var(--accent-solana-teal);">Connected to SSE Stream</span>
+  <div class="main-content">
+
+    <!-- TAB 1: RELAYERS -->
+    <div id="tab-relayers" class="tab-pane active">
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-label">Active Relayers</div>
+          <div class="metric-value" id="m-active-relayers">3</div>
+          <div class="metric-sub">Monitored on Solana & Base</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">24h Budget Spent</div>
+          <div class="metric-value" id="m-spent">$0.00</div>
+          <div class="metric-sub" id="m-spent-sub">of $500.00 daily limit</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Unread Deficits</div>
+          <div class="metric-value" id="m-unread-deficits">0</div>
+          <div class="metric-sub">Awaiting operator triage</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Treasury Reserves</div>
+          <div class="metric-value" id="m-treasury">5.42 SOL</div>
+          <div class="metric-sub">2,500 USDC available</div>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="card-header">
+          <span class="card-title">Allowlisted Relayers</span>
+          <button class="btn btn-sm btn-primary" onclick="openAddRelayerModal()">+ Add Relayer</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Relayer Name</th>
+              <th>Network</th>
+              <th>Target Address</th>
+              <th>Threshold</th>
+              <th>Target Balance</th>
+              <th>On-Chain Balance</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="relayers-tbody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
     </div>
-    <div class="terminal-body" id="terminal-logs">
-      <div class="log-line"><span class="log-time">[INIT]</span> <span class="log-info">Mermail Relayer Sentinel UI connected. Listening to real-time events...</span></div>
+
+    <!-- TAB 2: INBOX & TRIAGE -->
+    <div id="tab-inbox" class="tab-pane">
+      <div class="triage-grid">
+        <div class="data-card">
+          <div class="card-header">
+            <span class="card-title">Inbound Alert Messages</span>
+            <span class="mono-cell" id="inbox-count" style="font-size: 11px; color: var(--text-dim);">0 messages</span>
+          </div>
+          <div style="padding: 16px;" id="inbox-container">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <div class="data-card">
+          <div class="card-header">
+            <span class="card-title">Replenishment Proposal Preview</span>
+            <span class="mono-cell" id="triage-status-pill" style="font-size: 11px; color: var(--text-dim);">Idle</span>
+          </div>
+          <div style="padding: 16px;">
+            <pre class="preview-pre" id="preview-display">Select an alert from the list to evaluate and preview the replenishment proposal.</pre>
+            <div id="triage-actions" style="margin-top: 14px; display: none;">
+              <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px;" onclick="approveCurrentIncident()">
+                Authorize & Execute PayBox Transfer
+              </button>
+            </div>
+            <div id="settlement-result" style="display: none; margin-top: 14px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); padding: 12px; border-radius: 6px; font-family: var(--mono); font-size: 12px;">
+              <div style="color: var(--success); font-weight: 600; margin-bottom: 4px;">Transfer Settled on Blockchain</div>
+              <div id="settlement-body"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: AUDIT HISTORY -->
+    <div id="tab-history" class="tab-pane">
+      <div class="data-card">
+        <div class="card-header">
+          <span class="card-title">Execution Audit Log</span>
+          <a href="/api/history/export" class="btn btn-sm">Export CSV</a>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Event Type</th>
+              <th>Relayer / Target</th>
+              <th>Chain</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Tx Hash</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 4: SETTINGS / RISK POLICY -->
+    <div id="tab-settings" class="tab-pane">
+      <div class="data-card" style="max-width: 680px;">
+        <div class="card-header">
+          <span class="card-title">Treasury Risk Policy & Limits</span>
+        </div>
+        <div style="padding: 20px;">
+          <form id="policy-form" onsubmit="savePolicy(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Rolling 24-Hour Cap (USD)</label>
+                <input type="number" step="10" class="form-input" id="cfg-daily-cap" value="500">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Max Single Top-Up (USD)</label>
+                <input type="number" step="10" class="form-input" id="cfg-single-cap" value="150">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Gas Buffer Multiplier</label>
+                <input type="number" step="0.05" class="form-input" id="cfg-buffer" value="1.25">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Require Human Confirmation</label>
+                <select class="form-input" id="cfg-human-req">
+                  <option value="true">Enabled (Strict Dual-Control)</option>
+                  <option value="false">Disabled (Autonomous Devnet Mode)</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Save Configuration</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Event Log -->
+    <div style="margin-top: 24px;">
+      <div style="font-size: 12px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; font-family: var(--mono); margin-bottom: 8px;">
+        Real-Time Operations Log
+      </div>
+      <div class="log-terminal" id="terminal">
+        <div class="log-line"><span class="log-time">[SYSTEM]</span> Mermail Relayer Sentinel operations console connected.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Add Relayer Modal -->
+  <div class="modal-overlay" id="add-modal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <span style="font-weight: 600;">Add Allowlisted Relayer</span>
+        <button class="btn btn-sm" onclick="closeAddRelayerModal()">Cancel</button>
+      </div>
+      <form onsubmit="handleAddRelayer(event)">
+        <div class="form-group">
+          <label class="form-label">Relayer ID (Slug)</label>
+          <input type="text" class="form-input" id="add-id" placeholder="e.g. solana-bridge-relayer-01" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Friendly Name</label>
+          <input type="text" class="form-input" id="add-name" placeholder="e.g. Wormhole Execution Relayer" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Blockchain Network</label>
+            <select class="form-input" id="add-chain">
+              <option value="solana">Solana</option>
+              <option value="base">Base</option>
+              <option value="ethereum">Ethereum</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Alert Sender Email</label>
+            <input type="email" class="form-input" id="add-sender" placeholder="alerts@helius.dev">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Wallet Address</label>
+          <input type="text" class="form-input" id="add-address" placeholder="Base58 on Solana or 0x on EVM" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Deficit Threshold</label>
+            <input type="number" step="0.001" class="form-input" id="add-threshold" value="0.1" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target Balance</label>
+            <input type="number" step="0.001" class="form-input" id="add-target" value="0.5" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 8px;">Register Relayer</button>
+      </form>
     </div>
   </div>
 
   <script>
-    let currentIncident = null;
-    let cachedEmails = [];
+    let activeIncident = null;
 
-    function log(msg, type = 'info') {
-      const logs = document.getElementById('terminal-logs');
+    function log(msg) {
+      const term = document.getElementById('terminal');
       const time = new Date().toLocaleTimeString();
       const div = document.createElement('div');
       div.className = 'log-line';
-      div.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-${type}">${msg}</span>`;
-      logs.appendChild(div);
-      logs.scrollTop = logs.scrollHeight;
+      div.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
+      term.appendChild(div);
+      term.scrollTop = term.scrollHeight;
     }
 
-    // Connect to Server-Sent Events (SSE)
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.target.classList.add('active');
+      if (tabId === 'history') loadHistory();
+      if (tabId === 'inbox') loadEmails();
+    }
+
     function setupSSE() {
-      const evtSource = new EventSource('/api/events');
-      evtSource.addEventListener('log', (e) => {
-        const data = JSON.parse(e.data);
-        log(data.payload.message, 'info');
+      const es = new EventSource('/api/events');
+      es.addEventListener('log', e => {
+        const d = JSON.parse(e.data);
+        log(d.payload.message);
       });
-      evtSource.addEventListener('new_alert', (e) => {
-        const data = JSON.parse(e.data);
-        log(`⚡ Inbound alert detected: ${data.payload.subject}`, 'warn');
-        fetchEmails();
+      es.addEventListener('new_alert', () => {
+        loadEmails();
+        loadStatus();
       });
-      evtSource.addEventListener('attack_intercepted', (e) => {
-        const data = JSON.parse(e.data);
-        log(`🛡️ Prompt injection intercepted! Target ${data.payload.attackEmail.subject} quarantined.`, 'error');
-        alert(`🚨 SECURITY DEFENSE TRIGGERED:\n\nAdversarial Prompt-Injection attack detected and neutralized!\n\nVerdict: ${data.payload.verdict}\nAction: ${data.payload.action}`);
-        fetchEmails();
+      es.addEventListener('attack_intercepted', e => {
+        const d = JSON.parse(e.data);
+        log(`[SECURITY INTERCEPTION] Sanitized and quarantined attack from ${d.payload.attackEmail.from}`);
+        alert(`SECURITY DEFENSE ACTIVATED:\n\nAdversarial Prompt-Injection detected and blocked.\nReason: Disallowed target address and instruction override attempt.\nAction: Email quarantined, zero funds moved.`);
+        loadEmails();
       });
-      evtSource.addEventListener('replenishment_settled', (e) => {
-        const data = JSON.parse(e.data);
-        log(`🎉 PayBox transfer settled on-chain! Tx: ${data.payload.txHash}`, 'success');
-        fetchState();
+      es.addEventListener('replenishment_settled', e => {
+        const d = JSON.parse(e.data);
+        log(`[SETTLEMENT] On-chain transfer complete. TxHash: ${d.payload.txHash}`);
+        loadStatus();
+        loadHistory();
       });
     }
 
-    async function fetchState() {
+    async function loadStatus() {
       try {
         const res = await fetch('/api/status');
         const data = await res.json();
-        
-        document.getElementById('header-mailbox').innerText = data.agent.defaultMailbox;
-        document.getElementById('header-budget').innerText = `$${data.budget.remaining.toFixed(2)} / $${data.budget.dailyCap} USD`;
 
-        renderRelayers(data.relayers);
-        fetchEmails();
-        log('State refreshed successfully.', 'info');
+        document.getElementById('hdr-mailbox').innerText = data.agent.defaultMailbox;
+        document.getElementById('hdr-cap').innerText = `$${data.budget.remaining.toFixed(2)} / $${data.budget.dailyCap} USD`;
+        document.getElementById('m-active-relayers').innerText = data.relayers.filter(r => r.enabled).length;
+        document.getElementById('m-spent').innerText = `$${data.budget.recentSpend.toFixed(2)}`;
+        document.getElementById('m-spent-sub').innerText = `of $${data.budget.dailyCap} limit`;
+
+        // Populate settings form
+        if (data.policy) {
+          document.getElementById('cfg-daily-cap').value = data.policy.maxDailyTopUpUsd || 500;
+          document.getElementById('cfg-single-cap').value = data.policy.maxSingleTopUpUsd || 150;
+          document.getElementById('cfg-buffer').value = data.policy.defaultGasBufferMultiplier || 1.25;
+        }
+
+        renderRelayersTable(data.relayers);
       } catch (err) {
-        log('Failed to fetch status: ' + err.message, 'error');
+        log(`[ERROR] Failed to load status: ${err.message}`);
       }
     }
 
-    function renderRelayers(relayers) {
-      const container = document.getElementById('relayers-container');
-      container.innerHTML = '';
-      document.getElementById('relayer-count').innerText = `${relayers.length} Registered`;
-
+    function renderRelayersTable(relayers) {
+      const tbody = document.getElementById('relayers-tbody');
+      tbody.innerHTML = '';
       relayers.forEach(r => {
-        const isLow = r.currentBalance !== undefined ? r.currentBalance < r.threshold : false;
-        const card = document.createElement('div');
-        card.className = `relayer-card ${isLow ? 'status-danger' : 'status-normal'}`;
-        card.innerHTML = `
-          <div class="rc-head">
-            <span class="rc-name">${r.name}</span>
-            <span class="rc-chain">${r.chain}</span>
-          </div>
-          <div class="rc-addr">${r.address}</div>
-          <div class="rc-balance-row">
-            <span>Threshold: ${r.threshold} ${r.asset}</span>
-            <span style="font-weight: 700; color: ${isLow ? 'var(--accent-danger)' : 'var(--accent-solana-teal)'};">
-              Target: ${r.targetBalance} ${r.asset}
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <span class="status-badge" style="${r.enabled ? '' : 'background: rgba(113,113,122,0.1); color: var(--text-dim); border-color: #3f3f46;'}">
+              <span class="status-dot"></span> ${r.enabled ? 'Active' : 'Disabled'}
             </span>
-          </div>
-          <div class="gauge-bg">
-            <div class="gauge-fill" style="width: ${Math.min(100, (r.threshold / r.targetBalance) * 100)}%; background: ${isLow ? 'var(--accent-danger)' : 'var(--accent-solana-teal)'};"></div>
-          </div>
+          </td>
+          <td style="font-weight: 500;">${r.name}</td>
+          <td><span class="mono-cell" style="text-transform: uppercase;">${r.chain}</span></td>
+          <td class="mono-cell" title="${r.address}">${r.address.substring(0, 10)}...${r.address.substring(r.address.length - 6)}</td>
+          <td class="mono-cell">${r.minThreshold} ${r.token}</td>
+          <td class="mono-cell">${r.targetBalance} ${r.token}</td>
+          <td class="mono-cell" id="bal-${r.id}">
+            <button class="btn btn-sm" onclick="checkLiveBalance('${r.id}')">Check RPC</button>
+          </td>
+          <td>
+            <div style="display: flex; gap: 4px;">
+              <button class="btn btn-sm" onclick="toggleRelayer('${r.id}', ${!r.enabled})">${r.enabled ? 'Disable' : 'Enable'}</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteRelayer('${r.id}')">Delete</button>
+            </div>
+          </td>
         `;
-        container.appendChild(card);
+        tbody.appendChild(tr);
       });
     }
 
-    async function fetchEmails() {
+    async function checkLiveBalance(relayerId) {
+      const cell = document.getElementById(`bal-${relayerId}`);
+      cell.innerText = 'Querying...';
       try {
-        const res = await fetch('/api/emails');
+        const res = await fetch(`/api/relayers/${encodeURIComponent(relayerId)}/balance`, { method: 'POST' });
         const data = await res.json();
-        cachedEmails = data.emails || [];
-        const container = document.getElementById('emails-container');
-        container.innerHTML = '';
-        document.getElementById('emails-count').innerText = `${cachedEmails.length} Unread`;
-
-        if (cachedEmails.length === 0) {
-          container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; text-align: center; padding: 20px;">No unread alerts in inbox. System healthy.</div>';
-          return;
+        if (data.success) {
+          cell.innerHTML = `<strong>${data.balance}</strong> ${data.unit}`;
+        } else {
+          cell.innerHTML = `<span style="color: var(--warning);" title="${data.error}">Offline/Mock</span>`;
         }
-
-        cachedEmails.forEach((email, idx) => {
-          const isAttack = email.subject.toLowerCase().includes('emergency') || email.subject.toLowerCase().includes('compromised');
-          const item = document.createElement('div');
-          item.className = `email-item ${isAttack ? 'attack' : ''}`;
-          item.onclick = () => selectAndTriageEmail(email);
-          item.innerHTML = `
-            <div class="email-top">
-              <span>${email.from}</span>
-              <span>${new Date(email.date).toLocaleTimeString()}</span>
-            </div>
-            <div class="email-subject">${isAttack ? '🚨 ' : '⚠️ '}${email.subject}</div>
-            <div class="email-preview">${email.body?.text ? email.body.text.substring(0, 90) + '...' : ''}</div>
-          `;
-          container.appendChild(item);
-        });
       } catch (err) {
-        log('Failed to fetch emails: ' + err.message, 'error');
+        cell.innerText = 'Err';
       }
     }
 
-    async function selectAndTriageEmail(email) {
-      log(`Selected alert [${email.id}] for triage...`, 'info');
+    async function toggleRelayer(relayerId, enableState) {
+      try {
+        await fetch(`/api/relayers/${encodeURIComponent(relayerId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: enableState })
+        });
+        loadStatus();
+      } catch (err) {
+        log(`[ERROR] Toggle failed: ${err.message}`);
+      }
+    }
+
+    async function deleteRelayer(relayerId) {
+      if (!confirm(`Delete relayer ${relayerId} from allowlist?`)) return;
+      try {
+        await fetch(`/api/relayers/${encodeURIComponent(relayerId)}`, { method: 'DELETE' });
+        loadStatus();
+      } catch (err) {
+        log(`[ERROR] Delete failed: ${err.message}`);
+      }
+    }
+
+    async function loadEmails() {
+      try {
+        const res = await fetch('/api/emails');
+        const data = await res.json();
+        const emails = data.emails || [];
+        const container = document.getElementById('inbox-container');
+        document.getElementById('inbox-count').innerText = `${emails.length} unread`;
+        document.getElementById('m-unread-deficits').innerText = emails.length;
+
+        container.innerHTML = '';
+        if (emails.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-dim); text-align: center; padding: 24px; font-size: 13px;">No unread alert emails in mailbox.</div>';
+          return;
+        }
+
+        emails.forEach(e => {
+          const div = document.createElement('div');
+          div.className = 'email-row';
+          div.onclick = () => selectAlert(e, div);
+          div.innerHTML = `
+            <div class="email-row-head">
+              <span>${e.from}</span>
+              <span>${new Date(e.date).toLocaleTimeString()}</span>
+            </div>
+            <div class="email-row-subj">${e.subject}</div>
+            <div class="email-row-snip">${(e.body?.text || '').substring(0, 80)}...</div>
+          `;
+          container.appendChild(div);
+        });
+      } catch (err) {
+        log(`[ERROR] Failed to load inbox: ${err.message}`);
+      }
+    }
+
+    async function selectAlert(email, el) {
+      document.querySelectorAll('.email-row').forEach(r => r.classList.remove('selected'));
+      el.classList.add('selected');
+
+      document.getElementById('preview-display').innerText = 'Evaluating alert and calculating shortfall...';
+      document.getElementById('settlement-result').style.display = 'none';
+
       try {
         const res = await fetch('/api/triage', {
           method: 'POST',
@@ -569,104 +765,180 @@
           body: JSON.stringify({ email })
         });
         const incident = await res.json();
-        currentIncident = incident;
+        activeIncident = incident;
 
-        const previewEl = document.getElementById('preview-content');
-        const actionBtns = document.getElementById('action-buttons');
-        const settlementBox = document.getElementById('settlement-box');
-        settlementBox.style.display = 'none';
+        const previewEl = document.getElementById('preview-display');
+        const actionsEl = document.getElementById('triage-actions');
+        const pill = document.getElementById('triage-status-pill');
 
         if (incident.status === 'AWAITING_OPERATOR_APPROVAL') {
           previewEl.innerText = incident.preview;
-          actionBtns.style.display = 'block';
-          log(`Triage complete: ${incident.proposedTopUp} ${incident.token} replenishment proposed.`, 'warn');
+          actionsEl.style.display = 'block';
+          pill.innerText = 'Approval Pending';
+          pill.style.color = 'var(--warning)';
         } else {
-          previewEl.innerText = `STATUS: ${incident.status}\nREASON: ${incident.reason}\n${JSON.stringify(incident.alert, null, 2)}`;
-          actionBtns.style.display = 'none';
-          log(`Alert rejected/quarantined: ${incident.reason}`, 'error');
+          previewEl.innerText = `[TRIAGE RESULT: REJECTED]\nReason: ${incident.reason}\n\n${JSON.stringify(incident.alert, null, 2)}`;
+          actionsEl.style.display = 'none';
+          pill.innerText = 'Rejected / Quarantined';
+          pill.style.color = 'var(--danger)';
         }
       } catch (err) {
-        log('Triage failed: ' + err.message, 'error');
+        log(`[ERROR] Triage failed: ${err.message}`);
       }
     }
 
-    async function triggerScan() {
-      const statusEl = document.getElementById('scan-status');
-      statusEl.innerText = 'Scanning...';
-      log('Triggered manual inbox scan...', 'info');
-      try {
-        const res = await fetch('/api/scan', { method: 'POST' });
-        const data = await res.json();
-        statusEl.innerText = `Scan complete (${data.incidents?.length || 0} alerts triaged)`;
-        fetchState();
-        if (data.incidents && data.incidents.length > 0) {
-          const firstApprovable = data.incidents.find(i => i.status === 'AWAITING_OPERATOR_APPROVAL');
-          if (firstApprovable) {
-            currentIncident = firstApprovable;
-            document.getElementById('preview-content').innerText = firstApprovable.preview;
-            document.getElementById('action-buttons').style.display = 'block';
-          }
-        }
-      } catch (err) {
-        statusEl.innerText = 'Scan failed';
-        log('Scan failed: ' + err.message, 'error');
-      }
-    }
-
-    async function approveReplenishment() {
-      if (!currentIncident) return;
-      log(`Authorizing replenishment for ${currentIncident.relayerName}...`, 'info');
+    async function approveCurrentIncident() {
+      if (!activeIncident) return;
+      log(`[EXECUTE] Operator approving replenishment for ${activeIncident.relayerName}...`);
       try {
         const res = await fetch('/api/approve', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ incident: currentIncident })
+          body: JSON.stringify({ incident: activeIncident })
         });
         const result = await res.json();
-        
-        document.getElementById('action-buttons').style.display = 'none';
-        const settlementBox = document.getElementById('settlement-box');
-        const detailsEl = document.getElementById('settlement-details');
-        
-        settlementBox.style.display = 'block';
-        detailsEl.innerHTML = `
-          <div><strong>Request ID:</strong> ${result.requestId}</div>
-          <div><strong>Tx Hash:</strong> <a href="https://solscan.io/tx/${result.txHash}" target="_blank" style="color: #38bdf8;">${result.txHash}</a></div>
-          <div><strong>Receipt Dispatched:</strong> Thread Re: [RESOLVED] Relayer Gas Refueled</div>
+        document.getElementById('triage-actions').style.display = 'none';
+        const box = document.getElementById('settlement-result');
+        const body = document.getElementById('settlement-body');
+        box.style.display = 'block';
+        body.innerHTML = `
+          <div>Tx Hash: <a href="https://solscan.io/tx/${result.txHash}" target="_blank" style="color: #60a5fa; word-break: break-all;">${result.txHash}</a></div>
+          <div>Request ID: ${result.requestId}</div>
+          <div style="color: var(--text-muted); margin-top: 4px;">Receipt dispatched back to email thread.</div>
         `;
-        log(`Replenishment successfully settled!`, 'success');
-        fetchState();
+        loadEmails();
       } catch (err) {
-        log('Approval failed: ' + err.message, 'error');
+        log(`[ERROR] Approval failed: ${err.message}`);
       }
     }
 
-    async function simulateAlert() {
-      log('Injecting simulated low-gas alert from Helius...', 'warn');
+    async function scanInbox() {
+      log('[SCAN] Scanning Mermail inbox for unread alerts...');
+      try {
+        await fetch('/api/scan', { method: 'POST' });
+        loadEmails();
+        loadStatus();
+      } catch (err) {
+        log(`[ERROR] Scan error: ${err.message}`);
+      }
+    }
+
+    async function simulateAlert(chain, balance) {
+      log(`[SIMULATE] Generating simulated ${chain.toUpperCase()} deficit alert...`);
       try {
         await fetch('/api/simulate/alert', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chain: 'solana', balance: 0.042 })
+          body: JSON.stringify({ chain, balance })
         });
-        fetchEmails();
+        loadEmails();
       } catch (err) {
-        log('Failed to simulate alert: ' + err.message, 'error');
+        log(`[ERROR] Failed to inject alert: ${err.message}`);
       }
     }
 
     async function simulateAttack() {
-      log('Injecting simulated prompt-injection attack...', 'error');
+      log('[SIMULATE] Injecting adversarial prompt-injection attack vector...');
       try {
         await fetch('/api/simulate/attack', { method: 'POST' });
       } catch (err) {
-        log('Failed to simulate attack: ' + err.message, 'error');
+        log(`[ERROR] Failed to inject attack: ${err.message}`);
       }
     }
 
-    // Init
+    async function loadHistory() {
+      try {
+        const res = await fetch('/api/history?limit=50');
+        const data = await res.json();
+        const tbody = document.getElementById('history-tbody');
+        tbody.innerHTML = '';
+        (data.events || []).forEach(e => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="mono-cell">${new Date(e.timestamp).toLocaleTimeString()}</td>
+            <td><span class="mono-cell" style="font-size: 11px;">${e.type}</span></td>
+            <td>${e.relayerId || e.targetAddress || '—'}</td>
+            <td class="mono-cell">${(e.chain || '—').toUpperCase()}</td>
+            <td class="mono-cell">${e.amount || '—'}</td>
+            <td><span class="status-badge">${e.status || 'OK'}</span></td>
+            <td class="mono-cell">${e.txHash ? e.txHash.substring(0, 12) + '...' : '—'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        log(`[ERROR] Failed to load history: ${err.message}`);
+      }
+    }
+
+    async function savePolicy(e) {
+      e.preventDefault();
+      const dailyCap = Number(document.getElementById('cfg-daily-cap').value);
+      const singleCap = Number(document.getElementById('cfg-single-cap').value);
+      const buffer = Number(document.getElementById('cfg-buffer').value);
+      const reqHuman = document.getElementById('cfg-human-req').value === 'true';
+
+      try {
+        await fetch('/api/config', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            policy: {
+              maxDailyTopUpUsd: dailyCap,
+              maxSingleTopUpUsd: singleCap,
+              defaultGasBufferMultiplier: buffer,
+              requireHumanConfirmation: reqHuman
+            }
+          })
+        });
+        log('[CONFIG] Policy settings saved.');
+        loadStatus();
+      } catch (err) {
+        log(`[ERROR] Failed to save policy: ${err.message}`);
+      }
+    }
+
+    function openAddRelayerModal() { document.getElementById('add-modal').classList.add('open'); }
+    function closeAddRelayerModal() { document.getElementById('add-modal').classList.remove('open'); }
+
+    async function handleAddRelayer(e) {
+      e.preventDefault();
+      const id = document.getElementById('add-id').value.trim();
+      const name = document.getElementById('add-name').value.trim();
+      const chain = document.getElementById('add-chain').value;
+      const sender = document.getElementById('add-sender').value.trim();
+      const address = document.getElementById('add-address').value.trim();
+      const minThreshold = Number(document.getElementById('add-threshold').value);
+      const targetBalance = Number(document.getElementById('add-target').value);
+
+      try {
+        const res = await fetch('/api/relayers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, name, chain, alertEmailSender: sender, address, minThreshold, targetBalance })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeAddRelayerModal();
+          loadStatus();
+          log(`[CONFIG] Relayer ${id} registered successfully.`);
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (err) {
+        alert('Failed: ' + err.message);
+      }
+    }
+
+    function refreshAll() {
+      loadStatus();
+      loadEmails();
+      log('[REFRESH] Updated all live data.');
+    }
+
+    // Initialize
     setupSSE();
-    fetchState();
+    loadStatus();
+    loadEmails();
   </script>
 </body>
 </html>
