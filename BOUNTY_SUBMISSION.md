@@ -41,11 +41,14 @@ https://x.com/[YOUR_HANDLE]/status/[YOUR_TWEET_ID]
 
 ## Key Technical Highlights
 
-1. **Practical Web3 Infrastructure**: Addresses relayer gas starvation for protocols running execution bots on Solana and Base.
-2. **PayBox Integration**: Uses Mermail's native Agent Wallet / PayBox MCP tools (`get_paybox_connection`, `paybox_get_portfolio`, `paybox_request_transfer`, `paybox_request_swap`) for dual-control signing handoffs.
-3. **Defense-in-Depth**:
-   - Inbound email content cannot set destination addresses or modify spend parameters.
-   - Solana Base58 and EVM EIP-55 address validation prevents malformed address injection.
-   - Multi-tier spend caps limit single-transaction and 24-hour aggregate outflows.
-4. **Live Management Console**: Native web UI on `http://localhost:3333` with real-time SSE event streaming, live on-chain RPC balance lookups, and allowlist editing.
-5. **Upstream Compatibility**: Passes all tests in the official `Nudgen-Marketing/mermail-skills` test suite (17 skills and 71 business tools validated).
+1. **Practical Web3 Infrastructure**: Addresses relayer and paymaster gas starvation for decentralized applications and protocols running execution bots on Solana, Base, and Ethereum.
+2. **Comprehensive Mermail Tool Orchestration**: Uses both Mermail Inbox MCP tools (`list_emails`, `read_email`, `reply_to_email`, `save_draft`) and PayBox / Agent Wallet tools (`get_paybox_connection`, `paybox_get_portfolio`, `paybox_request_transfer`, `paybox_request_swap`) with dual-control signing deep-links.
+3. **Web3 Wallet Integration**: Connects real browser wallets (Phantom, Solflare, MetaMask) or Mermail PayBox treasury directly in the UI, displaying live on-chain balances and acting as the human operator signer.
+4. **Defense-in-Depth & Prompt-Injection Neutralization**:
+   - Inbound email text cannot alter destination addresses or override spend caps.
+   - Solana Base58 and EVM address format validation prevents malformed injection attacks.
+   - Strict static allowlist and daily spend limits protect treasury reserves.
+5. **Autonomous Watchdog & Live Telemetry**: Background on-chain poller that actively monitors relayers and streams live Solana slot/epoch counters and Base Gwei gas prices.
+6. **Live Operations Platform**: Luxury dark Web3 console running on `http://localhost:3333` with real-time SSE streaming, instant manual top-ups, external webhook dispatches, and CSV audit exports.
+7. **100% Upstream & Test Suite Validation**: Passes all tests in the official `Nudgen-Marketing/mermail-skills` test suite (17 skills, 71 tools validated) and 18/18 automated unit and integration tests.
+
