@@ -38,14 +38,16 @@ export function loadConfig(options = {}) {
     dailyMaxUsdCap: Number(process.env.SENTINEL_DAILY_MAX_USD_CAP) || allowlist.policy?.maxDailyTopUpUsd || 500.0,
     maxSingleTopUpUsd: Number(process.env.SENTINEL_MAX_SINGLE_TOPUP_USD) || allowlist.policy?.maxSingleTopUpUsd || 150.0,
     policy: allowlist.policy,
-    relayers: allowlist.relayers || []
+    relayers: allowlist.relayers || [],
+    isEmergencyPaused: Boolean(allowlist.isEmergencyPaused || false),
+    pauseReason: allowlist.pauseReason || ''
   };
 }
 
 export function saveConfig(updates, options = {}) {
   const allowlistPath = options.allowlistPath || process.env.SENTINEL_ALLOWLIST_PATH || path.join(rootDir, 'config', 'relayers.json');
   
-  let current = { version: '1.0.0', policy: {}, relayers: [] };
+  let current = { version: '1.0.0', policy: {}, relayers: [], isEmergencyPaused: false, pauseReason: '' };
   if (existsSync(allowlistPath)) {
     try {
       current = JSON.parse(readFileSync(allowlistPath, 'utf8'));
@@ -57,6 +59,12 @@ export function saveConfig(updates, options = {}) {
   }
   if (Array.isArray(updates.relayers)) {
     current.relayers = updates.relayers;
+  }
+  if (updates.isEmergencyPaused !== undefined) {
+    current.isEmergencyPaused = Boolean(updates.isEmergencyPaused);
+  }
+  if (updates.pauseReason !== undefined) {
+    current.pauseReason = String(updates.pauseReason);
   }
 
   writeFileSync(allowlistPath, JSON.stringify(current, null, 2), 'utf8');

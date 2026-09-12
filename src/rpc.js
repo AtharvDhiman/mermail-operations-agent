@@ -105,17 +105,21 @@ export async function getNetworkMetrics() {
 
   try {
     // 1. Solana Epoch & Slot Telemetry
+    const solStart = performance.now();
     const solRes = await fetch(DEFAULT_RPC_ENDPOINTS.solana, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getEpochInfo' }),
       signal: AbortSignal.timeout(5000)
     });
+    const solLatency = Math.round(performance.now() - solStart);
+
     if (solRes.ok) {
       const solJson = await solRes.json();
       if (solJson.result) {
         result.solana = {
           status: 'online',
+          latencyMs: solLatency,
           epoch: solJson.result.epoch,
           slot: solJson.result.absoluteSlot,
           slotProgress: `${solJson.result.slotIndex} / ${solJson.result.slotsInEpoch}`,
@@ -125,32 +129,74 @@ export async function getNetworkMetrics() {
       }
     }
   } catch (err) {
-    result.solana = { status: 'error', error: err.message };
+    result.solana = { status: 'error', error: err.message, latencyMs: null };
   }
 
   try {
     // 2. Base Gas Price Telemetry
+    const baseStart = performance.now();
     const baseRes = await fetch(DEFAULT_RPC_ENDPOINTS.base, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }),
       signal: AbortSignal.timeout(5000)
     });
+    const baseLatency = Math.round(performance.now() - baseStart);
+
     if (baseRes.ok) {
       const baseJson = await baseRes.json();
       if (baseJson.result) {
         const gwei = Number(BigInt(baseJson.result)) / 1e9;
         result.base = {
           status: 'online',
+          latencyMs: baseLatency,
           gasPriceGwei: Number(gwei.toFixed(4)),
           rawWei: baseJson.result
         };
       }
     }
   } catch (err) {
-    result.base = { status: 'error', error: err.message };
+    result.base = { status: 'error', error: err.message, latencyMs: null };
   }
 
+  const solOk = result.solana.status === 'online';
+  const baseOk = result.base.status === 'online';
+  result.health = (solOk && baseOk) ? 'OPTIMAL' : ((solOk || baseOk) ? 'DEGRADED' : 'CRITICAL');
+
   return result;
+}
+
+/**
+ * Perform quick latency ping across all default RPC providers.
+ * @returns {Promise<Record<string, { status: string, latencyMs: number | null, error?: string }>>}
+ */
+export async function pingRpcEndpoints() {
+  const chains = Object.keys(DEFAULT_RPC_ENDPOINTS);
+  const results = {};
+
+  await Promise.all(chains.map(async (chain) => {
+    const url = DEFAULT_RPC_ENDPOINTS[chain];
+    const start = performance.now();
+    try {
+      let body;
+      if (chain === 'solana') {
+        body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getHealth' });
+      } else {
+        body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] });
+      }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        signal: AbortSignal.timeout(4000)
+      });
+      const latencyMs = Math.round(performance.now() - start);
+      results[chain] = { status: res.ok ? 'online' : 'error', latencyMs };
+    } catch (err) {
+      results[chain] = { status: 'error', latencyMs: null, error: err.message };
+    }
+  }));
+
+  return results;
 }
 

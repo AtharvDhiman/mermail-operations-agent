@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { SentinelWatchdog } from '../../src/watchdog.js';
 import { NotificationDispatcher } from '../../src/notifications.js';
 import { getAnalyticsSummary } from '../../src/analytics.js';
-import { getNetworkMetrics } from '../../src/rpc.js';
+import { getNetworkMetrics, pingRpcEndpoints } from '../../src/rpc.js';
 import { MermailRelayerSentinel } from '../../src/sentinel-agent.js';
 import { loadConfig } from '../../src/config.js';
 
@@ -61,10 +61,19 @@ describe('Watchdog, Telemetry & Analytics Tests', () => {
     assert.ok(summary.metrics.relayersCount >= 3);
   });
 
-  it('should query live network telemetry', async () => {
+  it('should query live network telemetry with latency benchmark', async () => {
     const telemetry = await getNetworkMetrics();
     assert.ok(telemetry.timestamp);
     assert.ok(telemetry.solana);
     assert.ok(telemetry.base);
+    assert.ok(telemetry.health);
+  });
+
+  it('should benchmark round-trip latency across RPC providers', async () => {
+    const pings = await pingRpcEndpoints();
+    assert.ok(pings.solana);
+    assert.ok(pings.base);
+    assert.ok(pings.ethereum);
+    assert.equal(typeof pings.solana.status, 'string');
   });
 });

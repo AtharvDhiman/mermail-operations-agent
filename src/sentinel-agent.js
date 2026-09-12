@@ -10,7 +10,8 @@ import {
 
 export class MermailRelayerSentinel {
   constructor(options = {}) {
-    this.config = loadConfig(options);
+    const loaded = loadConfig(options);
+    this.config = options.config ? { ...loaded, ...options.config } : loaded;
     this.client = options.client || new MermailClient(this.config);
     this.budgetTracker = new DailyBudgetTracker(this.config.dailyMaxUsdCap);
     this.status = SentinelStatus.IDLE;
@@ -81,6 +82,15 @@ export class MermailRelayerSentinel {
    */
   async triageAlert(email) {
     this.status = SentinelStatus.ALERT_DETECTED;
+
+    if (this.config.isEmergencyPaused) {
+      return {
+        status: SentinelStatus.REJECTED_SECURITY_VIOLATION,
+        reason: `EMERGENCY_CIRCUIT_BREAKER_ACTIVE: ${this.config.pauseReason || 'Disbursements frozen by operator'}`,
+        alert: { subject: email?.subject }
+      };
+    }
+
     const parsed = this.parseAlertDetails(email);
 
     if (!parsed.targetAddress) {
@@ -218,6 +228,10 @@ export class MermailRelayerSentinel {
    * Execute an authorized PayBox gas replenishment proposal
    */
   async executeReplenishment(incident) {
+    if (this.config.isEmergencyPaused) {
+      throw new Error(`Execution halted: Emergency circuit breaker is ACTIVE (${this.config.pauseReason || 'Treasury disbursements frozen by operator'})`);
+    }
+
     if (!incident || !incident.targetAddress) {
       throw new Error('No valid incident provided for replenishment.');
     }

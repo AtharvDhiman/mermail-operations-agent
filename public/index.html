@@ -1021,13 +1021,38 @@
           Start Watchdog
         </button>
       </div>
+      <div class="tele-item">
+        <button class="btn-action" style="padding: 3px 10px; font-size: 11px;" onclick="pingNow()" title="Measure round-trip latency to RPC endpoints">
+          ⚡ Ping RPC
+        </button>
+      </div>
+    </div>
+
+    <!-- Emergency Circuit Breaker Banner -->
+    <div id="circuit-breaker-banner" style="display: none; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 20px;">🛑</span>
+        <div>
+          <div style="font-weight: 700; color: #ef4444; font-family: var(--font-mono); font-size: 13px;">EMERGENCY CIRCUIT BREAKER ACTIVATED &bull; DISBURSEMENTS FROZEN</div>
+          <div style="font-size: 12px; color: var(--text-secondary);" id="circuit-breaker-reason">Manual safety halt active. All PayBox replenishment calls are rejected.</div>
+        </div>
+      </div>
+      <button class="btn-action" style="background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.4); color: var(--success); font-weight: 700;" onclick="toggleCircuitBreaker(false)">
+        Reset Breaker & Resume Operations &rarr;
+      </button>
     </div>
 
     <div class="console-header-card">
       <div class="console-status-row">
         <div class="cs-item">
           <span class="cs-label">Service Status</span>
-          <span class="cs-val" style="color: var(--success);">Online &bull; Monitoring</span>
+          <span class="cs-val" id="c-service-status" style="color: var(--success);">Online &bull; Monitoring</span>
+        </div>
+        <div class="cs-item">
+          <span class="cs-label">Circuit Breaker</span>
+          <span class="cs-val mono" id="c-circuit-status" style="color: var(--success); cursor: pointer;" title="Click to trip or reset breaker" onclick="toggleCircuitBreakerPrompt()">
+            ARMED (Normal)
+          </span>
         </div>
         <div class="cs-item">
           <span class="cs-label">Mailbox Scope</span>
@@ -1071,7 +1096,11 @@
       <div class="table-card">
         <div class="tc-header">
           <span class="tc-title">Configured Execution Relayers</span>
-          <button class="btn-action btn-gold" style="padding: 6px 12px; font-size: 11px;" onclick="openAddModal()">+ Add Relayer</button>
+          <div style="display: flex; gap: 8px;">
+            <a href="/api/relayers/export" class="btn-action" style="padding: 6px 12px; font-size: 11px; text-decoration: none;">Export JSON</a>
+            <button class="btn-action" style="padding: 6px 12px; font-size: 11px;" onclick="openImportModal()">Import JSON</button>
+            <button class="btn-action btn-gold" style="padding: 6px 12px; font-size: 11px;" onclick="openAddModal()">+ Add Relayer</button>
+          </div>
         </div>
         <table>
           <thead>
@@ -1188,6 +1217,31 @@
 
             <button type="submit" class="btn-action btn-gold" style="margin-top: 8px;">Save Changes</button>
           </form>
+        </div>
+      </div>
+
+      <!-- Emergency Safeguards Card -->
+      <div class="table-card" style="max-width: 650px; margin-top: 24px; border-color: rgba(239, 68, 68, 0.3);">
+        <div class="tc-header" style="background: rgba(239, 68, 68, 0.06);">
+          <span class="tc-title" style="color: #ef4444;">Emergency Safeguards & Circuit Breaker</span>
+          <span class="mono" id="policy-breaker-badge" style="color: var(--success); font-weight: 700;">ARMED (NORMAL)</span>
+        </div>
+        <div style="padding: 24px;">
+          <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
+            In the event of an anomalous gas surge, network fork, or relayer exploit attempt, tripping the circuit breaker immediately freezes all outbound PayBox treasury transfers and halts automatic watchdog alert injection.
+          </p>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label">Circuit Breaker Trip Reason</label>
+            <input type="text" class="form-ctrl" id="breaker-reason-input" placeholder="e.g., Anomalous base fee spike or suspected key compromise">
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn-action btn-danger-outline" onclick="toggleCircuitBreaker(true)">
+              🛑 Trip Circuit Breaker (Freeze All Disbursements)
+            </button>
+            <button type="button" class="btn-action" style="color: var(--success); border-color: rgba(34, 197, 94, 0.3);" onclick="toggleCircuitBreaker(false)">
+              ✓ Reset Circuit Breaker (Resume Normal Operations)
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1454,7 +1508,56 @@
     </div>
   </div>
 
+  <!-- Modal: Import Allowlist JSON -->
+  <div class="modal-backdrop" id="import-modal">
+    <div class="modal-content" style="max-width: 540px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <div>
+          <h3 style="font-size: 18px; font-weight: 700; color: #fff;">Import Relayers Allowlist</h3>
+          <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">Batch import or restore allowlisted relayer configurations</div>
+        </div>
+        <button class="btn-action" style="padding: 4px 10px;" onclick="closeImportModal()">&times;</button>
+      </div>
 
+      <form onsubmit="handleImportSubmit(event)">
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label">Upload JSON File</label>
+          <input type="file" id="import-file-input" accept=".json,application/json" class="form-ctrl" onchange="handleImportFileSelect(event)">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label">Or Paste JSON Payload</label>
+          <textarea class="form-ctrl mono" id="import-json-text" rows="7" placeholder='[
+  {
+    "id": "relayer-id",
+    "name": "Relayer Name",
+    "chain": "solana",
+    "address": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+    "minThreshold": 0.1,
+    "targetBalance": 0.5
+  }
+]' style="font-size: 11px;"></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 18px;">
+          <label class="form-label">Import Mode</label>
+          <select class="form-ctrl" id="import-mode">
+            <option value="merge">Merge with existing allowlist (Update matching / Append new)</option>
+            <option value="replace">Replace allowlist entirely</option>
+          </select>
+        </div>
+
+        <div id="import-error-box" style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px; color: var(--danger); font-size: 11px; margin-bottom: 14px; white-space: pre-wrap;"></div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="btn-action btn-gold" id="btn-import-submit" style="flex: 1; justify-content: center;">
+            Validate & Import Allowlist &rarr;
+          </button>
+          <button type="button" class="btn-action" onclick="closeImportModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer>
@@ -1464,6 +1567,22 @@
 
   <script>
     let activeIncident = null;
+
+    function getExplorerAccountUrl(chain, address) {
+      if (!address) return '#';
+      const c = (chain || '').toLowerCase();
+      if (c === 'solana') return `https://solscan.io/account/${address}`;
+      if (c === 'base') return `https://basescan.org/address/${address}`;
+      return `https://etherscan.io/address/${address}`;
+    }
+
+    function getExplorerTxUrl(chain, txHash) {
+      if (!txHash) return '#';
+      const c = (chain || '').toLowerCase();
+      if (c === 'solana') return `https://solscan.io/tx/${txHash}`;
+      if (c === 'base') return `https://basescan.org/tx/${txHash}`;
+      return `https://etherscan.io/tx/${txHash}`;
+    }
 
     function logTerm(msg) {
       const box = document.getElementById('term-logs');
@@ -1527,6 +1646,100 @@
         const d = JSON.parse(e.data);
         updateWatchdogUI(d.payload);
       });
+      es.addEventListener('emergency_status', e => {
+        const d = JSON.parse(e.data);
+        updateEmergencyUI(d.payload.isEmergencyPaused, d.payload.reason);
+      });
+      es.addEventListener('relayers_updated', () => {
+        loadStatus();
+      });
+    }
+
+    function updateEmergencyUI(isPaused, reason) {
+      const banner = document.getElementById('circuit-breaker-banner');
+      const bannerReason = document.getElementById('circuit-breaker-reason');
+      const statusEl = document.getElementById('c-circuit-status');
+      const serviceEl = document.getElementById('c-service-status');
+      const policyBadge = document.getElementById('policy-breaker-badge');
+
+      if (isPaused) {
+        if (banner) banner.style.display = 'flex';
+        if (bannerReason) bannerReason.innerText = reason ? `Reason: ${reason}` : 'Manual safety halt active. All PayBox replenishment calls are rejected.';
+        if (statusEl) {
+          statusEl.innerText = 'HALTED (CIRCUIT BREAKER)';
+          statusEl.style.color = 'var(--danger)';
+        }
+        if (serviceEl) {
+          serviceEl.innerText = 'HALTED • Circuit Breaker Active';
+          serviceEl.style.color = 'var(--danger)';
+        }
+        if (policyBadge) {
+          policyBadge.innerText = 'TRIPPED (DISBURSEMENTS FROZEN)';
+          policyBadge.style.color = 'var(--danger)';
+        }
+      } else {
+        if (banner) banner.style.display = 'none';
+        if (statusEl) {
+          statusEl.innerText = 'ARMED (Normal)';
+          statusEl.style.color = 'var(--success)';
+        }
+        if (serviceEl) {
+          serviceEl.innerText = 'Online • Monitoring';
+          serviceEl.style.color = 'var(--success)';
+        }
+        if (policyBadge) {
+          policyBadge.innerText = 'ARMED (NORMAL)';
+          policyBadge.style.color = 'var(--success)';
+        }
+      }
+    }
+
+    async function toggleCircuitBreaker(paused, reason = null) {
+      if (paused && !reason) {
+        reason = document.getElementById('breaker-reason-input')?.value.trim() || 'Manual emergency circuit breaker activation';
+      }
+      try {
+        const res = await fetch('/api/emergency-pause', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paused, reason })
+        });
+        const data = await res.json();
+        updateEmergencyUI(data.isEmergencyPaused, data.pauseReason);
+        loadStatus();
+      } catch (err) {
+        alert('Circuit breaker toggle failed: ' + err.message);
+      }
+    }
+
+    function toggleCircuitBreakerPrompt() {
+      const isCurrentlyPaused = document.getElementById('circuit-breaker-banner')?.style.display !== 'none';
+      if (isCurrentlyPaused) {
+        if (confirm('Reset circuit breaker and restore normal automated/manual treasury disbursements?')) {
+          toggleCircuitBreaker(false);
+        }
+      } else {
+        const reason = prompt('Trip Circuit Breaker: Enter reason for freezing disbursements (e.g. Gas spike / Key compromise):');
+        if (reason !== null) {
+          toggleCircuitBreaker(true, reason || 'Operator manual halt');
+        }
+      }
+    }
+
+    async function pingNow() {
+      logTerm('[RPC] Pinging RPC endpoints for round-trip latency...');
+      try {
+        const res = await fetch('/api/network/ping');
+        const data = await res.json();
+        const pings = data.pings || {};
+        const solMs = pings.solana?.latencyMs !== null ? `${pings.solana.latencyMs}ms` : 'offline';
+        const baseMs = pings.base?.latencyMs !== null ? `${pings.base.latencyMs}ms` : 'offline';
+        const ethMs = pings.ethereum?.latencyMs !== null ? `${pings.ethereum.latencyMs}ms` : 'offline';
+        logTerm(`[RPC PING] Solana: ${solMs} | Base: ${baseMs} | Ethereum: ${ethMs}`);
+        loadTelemetry();
+      } catch (err) {
+        logTerm(`[RPC ERROR] Ping failed: ${err.message}`);
+      }
     }
 
     async function loadStatus() {
@@ -1536,6 +1749,10 @@
 
         document.getElementById('c-mailbox').innerText = data.agent.defaultMailbox;
         document.getElementById('c-budget').innerText = `$${data.budget.recentSpend.toFixed(2)} / $${data.budget.dailyCap} USD`;
+
+        if (data.emergency) {
+          updateEmergencyUI(data.emergency.isEmergencyPaused, data.emergency.pauseReason);
+        }
 
         if (data.policy) {
           document.getElementById('policy-daily').value = data.policy.maxDailyTopUpUsd || 500;
@@ -1554,6 +1771,7 @@
       tbody.innerHTML = '';
       relayers.forEach(r => {
         const tr = document.createElement('tr');
+        const expUrl = getExplorerAccountUrl(r.chain, r.address);
         tr.innerHTML = `
           <td>
             <span class="mono" style="color: ${r.enabled ? 'var(--success)' : 'var(--text-tertiary)'}; font-weight: 600;">
@@ -1562,7 +1780,11 @@
           </td>
           <td style="font-weight: 600;">${r.name}</td>
           <td><span class="mono" style="text-transform: uppercase;">${r.chain}</span></td>
-          <td class="mono" title="${r.address}">${r.address.substring(0, 8)}...${r.address.substring(r.address.length - 6)}</td>
+          <td class="mono" title="${r.address}">
+            <a href="${expUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--accent-gold); text-decoration: none;" title="Inspect on block explorer">
+              ${r.address.substring(0, 8)}...${r.address.substring(r.address.length - 6)} ↗
+            </a>
+          </td>
           <td class="mono">${r.minThreshold} ${r.token}</td>
           <td class="mono">${r.targetBalance} ${r.token}</td>
           <td class="mono" id="rpc-${r.id}">
@@ -1704,14 +1926,20 @@
           body: JSON.stringify({ incident: activeIncident })
         });
         const result = await res.json();
+        if (result.error) {
+          alert('Replenishment failed: ' + result.error);
+          logTerm(`[ERROR] Disbursement rejected: ${result.error}`);
+          return;
+        }
         document.getElementById('proposal-actions').style.display = 'none';
         const box = document.getElementById('tx-success-box');
         const details = document.getElementById('tx-details');
         box.style.display = 'block';
+        const expUrl = getExplorerTxUrl(activeIncident?.chain, result.txHash);
         details.innerHTML = `
-          <div>Tx Hash: <a href="https://solscan.io/tx/${result.txHash}" target="_blank" style="color: var(--accent-gold); word-break: break-all;">${result.txHash}</a></div>
+          <div>Tx Hash: <a href="${expUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--accent-gold); word-break: break-all;">${result.txHash} ↗</a></div>
           <div>Request ID: ${result.requestId}</div>
-          <div style="color: var(--text-tertiary); margin-top: 4px;">Receipt dispatched to alert email thread.</div>
+          <div style="color: var(--text-tertiary); margin-top: 4px;">Cryptographic receipt dispatched to alert email thread.</div>
         `;
         loadEmails();
       } catch (err) {
@@ -1761,19 +1989,94 @@
         tbody.innerHTML = '';
         (data.events || []).forEach(e => {
           const tr = document.createElement('tr');
+          const txLink = e.txHash ? `<a href="${getExplorerTxUrl(e.chain, e.txHash)}" target="_blank" rel="noopener noreferrer" style="color: var(--accent-gold); text-decoration: none;">${e.txHash.substring(0, 10)}... ↗</a>` : '—';
+          const targetDisplay = e.targetAddress
+            ? `<div style="font-size: 11px;"><a href="${getExplorerAccountUrl(e.chain, e.targetAddress)}" target="_blank" rel="noopener noreferrer" style="color: var(--text-secondary); text-decoration: none;">${e.targetAddress.substring(0, 8)}...${e.targetAddress.substring(e.targetAddress.length - 4)} ↗</a></div>`
+            : '';
           tr.innerHTML = `
             <td class="mono">${new Date(e.timestamp).toLocaleTimeString()}</td>
             <td><span class="mono" style="font-size: 11px;">${e.type}</span></td>
-            <td>${e.relayerId || e.targetAddress || '—'}</td>
+            <td>
+              <div style="font-weight: 600;">${e.relayerId || '—'}</div>
+              ${targetDisplay}
+            </td>
             <td class="mono">${(e.chain || '—').toUpperCase()}</td>
             <td class="mono">${e.amount || '—'}</td>
             <td><span class="mono" style="color: var(--success);">${e.status || 'OK'}</span></td>
-            <td class="mono">${e.txHash ? e.txHash.substring(0, 10) + '...' : '—'}</td>
+            <td class="mono">${txLink}</td>
           `;
           tbody.appendChild(tr);
         });
       } catch (err) {
         logTerm(`[ERROR] Failed to load history: ${err.message}`);
+      }
+    }
+
+    // Allowlist JSON Import Handlers
+    function openImportModal() {
+      document.getElementById('import-json-text').value = '';
+      document.getElementById('import-file-input').value = '';
+      document.getElementById('import-error-box').style.display = 'none';
+      document.getElementById('import-modal').classList.add('open');
+    }
+
+    function closeImportModal() {
+      document.getElementById('import-modal').classList.remove('open');
+    }
+
+    function handleImportFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        document.getElementById('import-json-text').value = evt.target.result;
+      };
+      reader.readAsText(file);
+    }
+
+    async function handleImportSubmit(e) {
+      e.preventDefault();
+      const rawJson = document.getElementById('import-json-text').value.trim();
+      const mode = document.getElementById('import-mode').value;
+      const errBox = document.getElementById('import-error-box');
+      errBox.style.display = 'none';
+
+      if (!rawJson) {
+        errBox.innerText = 'Please paste JSON or choose a JSON file to upload.';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      let parsed;
+      try {
+        parsed = JSON.parse(rawJson);
+      } catch (jsonErr) {
+        errBox.innerText = 'Invalid JSON syntax: ' + jsonErr.message;
+        errBox.style.display = 'block';
+        return;
+      }
+
+      const payload = Array.isArray(parsed) ? { relayers: parsed, mode } : { ...parsed, mode };
+
+      try {
+        const res = await fetch('/api/relayers/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeImportModal();
+          loadStatus();
+          logTerm(`[CONFIG] Imported ${data.importedCount} relayers (Total in allowlist: ${data.totalRelayers})`);
+          alert(`Success: Imported ${data.importedCount} relayers into allowlist.`);
+        } else {
+          errBox.innerText = data.error + (data.details ? '\n• ' + data.details.join('\n• ') : '');
+          errBox.style.display = 'block';
+        }
+      } catch (err) {
+        errBox.innerText = 'Import failed: ' + err.message;
+        errBox.style.display = 'block';
       }
     }
 
@@ -1903,7 +2206,8 @@
         const data = await res.json();
         
         if (data.solana && data.solana.status === 'online') {
-          document.getElementById('sol-tele').innerHTML = `Slot: <span style="color: var(--accent-gold); font-weight: 700;">${data.solana.slot}</span> &bull; Epoch: ${data.solana.epoch} &bull; ${Number(data.solana.txCount).toLocaleString()} TXs`;
+          const lat = data.solana.latencyMs ? ` &bull; <span style="color: var(--success);">${data.solana.latencyMs}ms</span>` : '';
+          document.getElementById('sol-tele').innerHTML = `Slot: <span style="color: var(--accent-gold); font-weight: 700;">${data.solana.slot}</span>${lat} &bull; Epoch: ${data.solana.epoch}`;
           document.getElementById('sol-dot').style.background = 'var(--success)';
         } else {
           document.getElementById('sol-tele').innerText = 'RPC Reconnecting...';
@@ -1911,7 +2215,8 @@
         }
 
         if (data.base && data.base.status === 'online') {
-          document.getElementById('base-tele').innerHTML = `Gas: <span style="color: var(--accent-gold); font-weight: 700;">${data.base.gasPriceGwei}</span> Gwei`;
+          const lat = data.base.latencyMs ? ` &bull; <span style="color: var(--success);">${data.base.latencyMs}ms</span>` : '';
+          document.getElementById('base-tele').innerHTML = `Gas: <span style="color: var(--accent-gold); font-weight: 700;">${data.base.gasPriceGwei}</span> Gwei${lat}`;
           document.getElementById('base-dot').style.background = 'var(--success)';
         } else {
           document.getElementById('base-tele').innerText = 'RPC Standby';

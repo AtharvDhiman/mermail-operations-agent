@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { MermailRelayerSentinel } from './sentinel-agent.js';
 import { loadConfig, saveConfig } from './config.js';
 import { defaultHistory } from './history.js';
-import { getOnChainBalance, getNetworkMetrics } from './rpc.js';
+import { getOnChainBalance, getNetworkMetrics, pingRpcEndpoints } from './rpc.js';
 import { sanitizePromptInjection, validateAddressForChain, findAllowlistedRelayer } from './security.js';
 import { SentinelWatchdog } from './watchdog.js';
 import { defaultNotifier } from './notifications.js';
@@ -116,6 +116,10 @@ const server = http.createServer(async (req, res) => {
           dailyCap: config.dailyMaxUsdCap,
           remaining: agent.budgetTracker.getRemainingBudget(),
           recentSpend: agent.budgetTracker.getRecentSpend()
+        },
+        emergency: {
+          isEmergencyPaused: Boolean(config.isEmergencyPaused),
+          pauseReason: config.pauseReason || ''
         },
         policy: config.policy,
         relayers: config.relayers
@@ -257,6 +261,96 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // GET /api/relayers/export (JSON allowlist export)
+    if (pathname === '/api/relayers/export' && method === 'GET') {
+      const exportData = {
+        version: '1.0.0',
+        exportedAt: new Date().toISOString(),
+        policy: config.policy,
+        relayers: config.relayers
+      };
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Content-Disposition': 'attachment; filename="sentinel-relayers-allowlist.json"'
+      });
+      res.end(JSON.stringify(exportData, null, 2));
+      return;
+    }
+
+    // POST /api/relayers/import (JSON allowlist batch import & validation)
+    if (pathname === '/api/relayers/import' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const incomingList = Array.isArray(body) ? body : (Array.isArray(body.relayers) ? body.relayers : null);
+      const mode = body.mode || 'merge';
+
+      if (!incomingList || incomingList.length === 0) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Payload must contain a valid relayers array' }));
+        return;
+      }
+
+      const validated = [];
+      const errors = [];
+
+      for (let i = 0; i < incomingList.length; i++) {
+        const item = incomingList[i];
+        if (!item.id || !item.chain || !item.address || item.minThreshold === undefined || item.targetBalance === undefined) {
+          errors.push(`Item #${i + 1} (${item.id || 'unnamed'}): Missing required fields`);
+          continue;
+        }
+
+        const validAddr = validateAddressForChain(item.chain, item.address);
+        if (!validAddr) {
+          errors.push(`Item #${i + 1} (${item.id}): Invalid ${item.chain} address '${item.address}'`);
+          continue;
+        }
+
+        validated.push({
+          id: String(item.id).trim(),
+          name: String(item.name || item.id).trim(),
+          chain: String(item.chain).toLowerCase().trim(),
+          token: (item.chain.toLowerCase() === 'solana') ? 'SOL' : 'ETH',
+          address: String(item.address).trim(),
+          minThreshold: Number(item.minThreshold),
+          targetBalance: Number(item.targetBalance),
+          maxSingleTopUp: Number(item.maxSingleTopUp) || Number(item.targetBalance),
+          alertEmailSender: item.alertEmailSender || '',
+          enabled: item.enabled !== false
+        });
+      }
+
+      if (errors.length > 0) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Validation failed on import payload', details: errors }));
+        return;
+      }
+
+      if (mode === 'replace') {
+        config.relayers = validated;
+      } else {
+        for (const item of validated) {
+          const idx = config.relayers.findIndex(r => r.id === item.id || r.address.toLowerCase() === item.address.toLowerCase());
+          if (idx >= 0) {
+            config.relayers[idx] = item;
+          } else {
+            config.relayers.push(item);
+          }
+        }
+      }
+
+      saveConfig({ relayers: config.relayers });
+      agent = new MermailRelayerSentinel({ config });
+      watchdog.updateConfig(config);
+
+      defaultHistory.recordEvent('RELAYERS_IMPORTED', { count: validated.length, mode });
+      broadcastEvent('log', { message: `[CONFIG] Imported ${validated.length} relayers into allowlist (Mode: ${mode})` });
+      broadcastEvent('relayers_updated', { relayers: config.relayers });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, importedCount: validated.length, totalRelayers: config.relayers.length }));
+      return;
+    }
+
     // POST /api/relayers/:id/balance (Query live on-chain balance via RPC)
     if (pathname.startsWith('/api/relayers/') && pathname.endsWith('/balance') && method === 'POST') {
       const relayerId = decodeURIComponent(pathname.replace('/api/relayers/', '').replace('/balance', ''));
@@ -299,6 +393,12 @@ const server = http.createServer(async (req, res) => {
 
     // POST /api/relayers/:id/topup (Instant manual replenishment)
     if (pathname.startsWith('/api/relayers/') && pathname.endsWith('/topup') && method === 'POST') {
+      if (config.isEmergencyPaused) {
+        res.writeHead(423, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Disbursement blocked: Emergency circuit breaker is ACTIVE (${config.pauseReason || 'Halted by operator'})` }));
+        return;
+      }
+
       const relayerId = decodeURIComponent(pathname.replace('/api/relayers/', '').replace('/topup', ''));
       const relayer = config.relayers.find(r => r.id === relayerId);
 
@@ -460,6 +560,12 @@ const server = http.createServer(async (req, res) => {
 
     // POST /api/approve (Execute transfer)
     if (pathname === '/api/approve' && method === 'POST') {
+      if (config.isEmergencyPaused) {
+        res.writeHead(423, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Disbursement blocked: Emergency circuit breaker is ACTIVE (${config.pauseReason || 'Halted by operator'})` }));
+        return;
+      }
+
       const body = await parseJsonBody(req);
       const incident = body.incident;
       if (!incident) {
@@ -618,6 +724,48 @@ const server = http.createServer(async (req, res) => {
       const telemetry = await getNetworkMetrics();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(telemetry));
+      return;
+    }
+
+    // GET /api/network/ping (RPC Latency & Health Check)
+    if (pathname === '/api/network/ping' && method === 'GET') {
+      const pings = await pingRpcEndpoints();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ timestamp: new Date().toISOString(), pings }));
+      return;
+    }
+
+    // POST /api/emergency-pause (Circuit Breaker)
+    if (pathname === '/api/emergency-pause' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const isPaused = Boolean(body.paused);
+      const reason = body.reason || (isPaused ? 'Operator manual circuit breaker activation' : '');
+
+      config.isEmergencyPaused = isPaused;
+      config.pauseReason = reason;
+
+      saveConfig({ isEmergencyPaused: isPaused, pauseReason: reason });
+      agent.config.isEmergencyPaused = isPaused;
+      agent.config.pauseReason = reason;
+      watchdog.updateConfig(config);
+
+      const eventType = isPaused ? 'CIRCUIT_BREAKER_TRIPPED' : 'CIRCUIT_BREAKER_RESET';
+      defaultHistory.recordEvent(eventType, { paused: isPaused, reason });
+
+      const logMsg = isPaused
+        ? `[SECURITY CRITICAL] Emergency circuit breaker ACTIVATED: ${reason}. All disbursements halted.`
+        : `[SECURITY] Emergency circuit breaker RESET. Normal disbursements restored.`;
+
+      broadcastEvent('log', { message: logMsg });
+      broadcastEvent('emergency_status', { isEmergencyPaused: isPaused, reason });
+
+      await defaultNotifier.dispatch('CIRCUIT_BREAKER_EVENT', {
+        state: isPaused ? 'HALTED' : 'NORMAL',
+        reason
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, isEmergencyPaused: isPaused, pauseReason: reason }));
       return;
     }
 

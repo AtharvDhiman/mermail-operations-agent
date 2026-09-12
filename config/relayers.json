@@ -1,11 +1,15 @@
 {
   "version": "1.0.0",
   "policy": {
-    "maxDailyTopUpUsd": 500.0,
-    "maxSingleTopUpUsd": 150.0,
+    "maxDailyTopUpUsd": 500,
+    "maxSingleTopUpUsd": 150,
     "requireHumanConfirmation": true,
     "defaultGasBufferMultiplier": 1.25,
-    "allowlistedChains": ["solana", "base", "ethereum"]
+    "allowlistedChains": [
+      "solana",
+      "base",
+      "ethereum"
+    ]
   },
   "relayers": [
     {
@@ -16,7 +20,7 @@
       "address": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
       "minThreshold": 0.1,
       "targetBalance": 0.5,
-      "maxSingleTopUp": 1.0,
+      "maxSingleTopUp": 0.75,
       "alertEmailSender": "alerts@helius.dev",
       "enabled": true
     },
@@ -44,5 +48,7 @@
       "alertEmailSender": "notify@tenderly.co",
       "enabled": true
     }
-  ]
+  ],
+  "isEmergencyPaused": false,
+  "pauseReason": ""
 }

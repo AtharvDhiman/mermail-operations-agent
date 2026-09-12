@@ -71,4 +71,32 @@ describe('Sentinel Agent Unit Tests', () => {
     assert.equal(result.status, SentinelStatus.REJECTED_SECURITY_VIOLATION);
     assert.equal(result.reason, 'UNAUTHORIZED_TARGET_ADDRESS');
   });
+
+  it('should halt triage and reject alerts when emergency circuit breaker is active', async () => {
+    const frozenSentinel = new MermailRelayerSentinel({
+      config: {
+        isEmergencyPaused: true,
+        pauseReason: 'Operator manual emergency freeze',
+        relayers: []
+      }
+    });
+
+    const mockEmail = {
+      id: 'email_test_freeze',
+      from: 'alerts@helius.dev',
+      subject: '[ALERT] Low gas',
+      body: { text: 'Relayer ID: solana-mainnet-relayer-01' }
+    };
+
+    const result = await frozenSentinel.triageAlert(mockEmail);
+    assert.equal(result.status, SentinelStatus.REJECTED_SECURITY_VIOLATION);
+    assert.ok(result.reason.includes('EMERGENCY_CIRCUIT_BREAKER_ACTIVE'));
+
+    await assert.rejects(
+      async () => {
+        await frozenSentinel.executeReplenishment({ targetAddress: '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R' });
+      },
+      /Emergency circuit breaker is ACTIVE/
+    );
+  });
 });
