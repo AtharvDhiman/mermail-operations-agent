@@ -3,199 +3,553 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mermail Relayer Sentinel — Operations Console</title>
+  <title>Mermail Relayer Sentinel — Autonomous Gas & Treasury Rebalancer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #09090b;
-      --card-bg: #111114;
-      --border: #27272a;
-      --border-hover: #3f3f46;
-      --text: #f4f4f5;
-      --text-muted: #a1a1aa;
-      --text-dim: #71717a;
-      --accent: #6366f1;
-      --accent-hover: #4f46e5;
+      --bg-base: #0b0c10;
+      --bg-surface: #12141a;
+      --bg-surface-elevated: #181b24;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(250, 204, 21, 0.4);
+      --accent-gold: #facc15;
+      --accent-gold-glow: rgba(250, 204, 21, 0.25);
+      --accent-gold-dark: #ca8a04;
+      --text-primary: #ffffff;
+      --text-secondary: #9ca3af;
+      --text-tertiary: #6b7280;
       --success: #22c55e;
-      --warning: #f59e0b;
       --danger: #ef4444;
-      --mono: 'JetBrains Mono', monospace;
-      --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-main);
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Top Navigation Bar */
-    header {
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 24px;
+    /* Top Navigation matching Dribbble reference */
+    .nav-wrapper {
+      position: sticky;
+      top: 0;
+      z-index: 100;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 18px 48px;
+      background: rgba(11, 12, 16, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-subtle);
     }
 
-    .brand-row {
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #1e222d;
+      border: 1px solid rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent-gold);
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .nav-pill-menu {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 9999px;
+      padding: 4px 8px;
+    }
+
+    .nav-item {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .nav-item:hover, .nav-item.active {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-actions {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .brand-title {
-      font-size: 15px;
+    .btn-nav-cta {
+      background: #ffffff;
+      color: #0b0c10;
+      border: none;
+      border-radius: 9999px;
+      padding: 8px 20px;
+      font-size: 13px;
       font-weight: 600;
-      color: var(--text);
-      letter-spacing: -0.2px;
-    }
-
-    .status-badge {
+      text-decoration: none;
+      cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 11px;
-      font-weight: 500;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-family: var(--mono);
-      background: rgba(34, 197, 94, 0.1);
-      color: var(--success);
-      border: 1px solid rgba(34, 197, 94, 0.25);
+      transition: all 0.2s ease;
     }
-    .status-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: currentColor;
+    .btn-nav-cta:hover {
+      background: #f3f4f6;
+      transform: translateY(-1px);
     }
 
-    .header-meta {
+    /* Hero Section matching reference */
+    .hero-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 80px 32px 60px 32px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 60px;
+      align-items: center;
+      position: relative;
+    }
+
+    .hero-content h1 {
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1.12;
+      letter-spacing: -1.5px;
+      margin-bottom: 24px;
+    }
+
+    .hero-content h1 .gold-highlight {
+      color: var(--accent-gold);
+      text-shadow: 0 0 35px rgba(250, 204, 21, 0.35);
+    }
+
+    .hero-subtext-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 36px;
+      max-width: 520px;
+    }
+
+    .hero-subtext-box .bullet {
+      color: var(--accent-gold);
+      font-size: 16px;
+      line-height: 1.4;
+    }
+
+    .hero-subtext-box p {
+      color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .hero-cta-group {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 18px;
     }
 
-    .meta-item {
+    .btn-hero-primary {
+      background: var(--accent-gold);
+      color: #0b0c10;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 12px 28px;
+      border-radius: 9999px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(250, 204, 21, 0.35);
+      transition: all 0.2s ease;
+    }
+    .btn-hero-primary:hover {
+      background: #fde047;
+      transform: translateY(-2px);
+      box-shadow: 0 0 35px rgba(250, 204, 21, 0.5);
+    }
+
+    .btn-hero-secondary {
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.2s ease;
+      cursor: pointer;
+    }
+    .btn-hero-secondary:hover {
+      color: var(--accent-gold);
+    }
+
+    /* Right Hero Visuals: Glowing Amber Glass Cards */
+    .hero-visual-wrapper {
+      position: relative;
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .amber-card-glow {
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(250, 204, 21, 0.3) 0%, rgba(202, 138, 4, 0.05) 60%, transparent 80%);
+      filter: blur(40px);
+      z-index: 1;
+    }
+
+    .amber-glass-stack {
+      position: absolute;
+      left: 10px;
+      z-index: 2;
+      width: 170px;
+      height: 190px;
+      background: linear-gradient(145deg, rgba(250, 204, 21, 0.45), rgba(202, 138, 4, 0.15));
+      border: 1px solid rgba(250, 204, 21, 0.65);
+      border-radius: 20px;
+      backdrop-filter: blur(16px);
+      box-shadow: -15px 15px 40px rgba(0, 0, 0, 0.6), inset 0 0 30px rgba(250, 204, 21, 0.3);
+      transform: perspective(600px) rotateY(-12deg) rotateX(10deg);
+    }
+
+    .amber-glass-stack-2 {
+      position: absolute;
+      left: 45px;
+      top: 60px;
+      z-index: 3;
+      width: 170px;
+      height: 190px;
+      background: linear-gradient(145deg, rgba(250, 204, 21, 0.6), rgba(202, 138, 4, 0.25));
+      border: 1px solid rgba(250, 204, 21, 0.8);
+      border-radius: 20px;
+      backdrop-filter: blur(16px);
+      box-shadow: -15px 15px 40px rgba(0, 0, 0, 0.6), inset 0 0 30px rgba(250, 204, 21, 0.4);
+      transform: perspective(600px) rotateY(-12deg) rotateX(10deg);
+    }
+
+    /* Floating "Available Markets" / Allowlisted Relayers Card from reference */
+    .floating-markets-card {
+      position: relative;
+      z-index: 10;
+      margin-left: 120px;
+      width: 290px;
+      background: rgba(18, 20, 26, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 20px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    }
+
+    .fmc-header {
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: var(--text-tertiary);
+      margin-bottom: 14px;
+      font-family: var(--font-mono);
+    }
+
+    .market-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all 0.15s ease;
+    }
+    .market-row:last-child { border-bottom: none; }
+    .market-row:hover { padding-left: 4px; }
+    .market-row:hover .market-arrow { color: var(--accent-gold); transform: translateX(3px); }
+
+    .market-info-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .market-info-network {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+    }
+    .market-arrow {
+      color: var(--text-tertiary);
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    /* Partners / Integrations Bar */
+    .integrations-bar {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 70px;
+    }
+
+    .integration-label {
       font-size: 12px;
-      color: var(--text-muted);
-      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
     }
-    .meta-item strong { color: var(--text); font-weight: 500; }
 
-    /* Action bar */
-    .action-bar {
-      background: #0d0d10;
-      border-bottom: 1px solid var(--border);
-      padding: 10px 24px;
+    .partner-logos {
+      display: flex;
+      gap: 36px;
+      align-items: center;
+    }
+    .partner-logo-item {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .partner-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-gold);
+    }
+
+    /* Middle section: Ecosystem summary */
+    .section-intro {
+      max-width: 1280px;
+      margin: 0 auto 40px auto;
+      padding: 0 32px;
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 40px;
+      align-items: flex-start;
+    }
+
+    .section-intro h2 {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1.15;
+    }
+
+    .section-intro p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* 3-Column Ecosystem Cards */
+    .ecosystem-cards-grid {
+      max-width: 1280px;
+      margin: 0 auto 70px auto;
+      padding: 0 32px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .eco-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 26px;
+      transition: all 0.2s ease;
+    }
+    .eco-card:hover {
+      border-color: rgba(250, 204, 21, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .eco-card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .eco-card-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Operations Console Main Container */
+    .console-section {
+      max-width: 1280px;
+      margin: 0 auto 80px auto;
+      padding: 0 32px;
+    }
+
+    .console-header-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .console-status-row {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .cs-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .cs-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      color: var(--text-tertiary);
+    }
+    .cs-val {
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+    }
+
+    .console-controls {
+      display: flex;
       gap: 10px;
-    }
-
-    .nav-tabs {
-      display: flex;
-      gap: 4px;
-    }
-
-    .tab-btn {
-      background: none;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      padding: 6px 14px;
-      border-radius: 6px;
-      font-family: var(--sans);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
-    .tab-btn.active { background: #1c1c21; color: var(--text); border-color: var(--border); }
-
-    .action-group {
-      display: flex;
-      gap: 8px;
       align-items: center;
     }
 
-    /* Buttons */
-    .btn {
-      background: var(--card-bg);
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-family: var(--sans);
+    .btn-action {
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 8px 16px;
       font-size: 12px;
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       transition: all 0.15s ease;
     }
-    .btn:hover { background: #1a1a20; border-color: var(--border-hover); }
-    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-    .btn-danger { color: var(--danger); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
-    .btn-danger:hover { background: rgba(239, 68, 68, 0.15); }
-    .btn-sm { padding: 4px 8px; font-size: 11px; }
-
-    /* Content Layout */
-    .main-content {
-      padding: 24px;
-      max-width: 1400px;
-      margin: 0 auto;
+    .btn-action:hover {
+      border-color: rgba(255,255,255,0.25);
+      background: #202430;
+    }
+    .btn-action.btn-gold {
+      background: var(--accent-gold);
+      color: #0b0c10;
+      border: none;
+    }
+    .btn-action.btn-gold:hover {
+      background: #fde047;
+    }
+    .btn-action.btn-danger-outline {
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+      background: rgba(239, 68, 68, 0.05);
+    }
+    .btn-action.btn-danger-outline:hover {
+      background: rgba(239, 68, 68, 0.15);
     }
 
-    .tab-pane { display: none; }
-    .tab-pane.active { display: block; }
-
-    /* Overview metric cards */
-    .metrics-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-bottom: 24px;
+    /* Console Tabs & Grid */
+    .console-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
     }
-
-    .metric-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
+    .c-tab {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--text-tertiary);
+      padding: 8px 18px;
       border-radius: 8px;
-      padding: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
     }
-    .metric-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; font-family: var(--mono); }
-    .metric-value { font-size: 24px; font-weight: 700; color: var(--text); margin-top: 4px; font-family: var(--mono); }
-    .metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: var(--mono); }
+    .c-tab.active {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      border-color: var(--border-subtle);
+    }
+
+    .tab-view { display: none; }
+    .tab-view.active { display: block; }
 
     /* Tables */
-    .data-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+    .table-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
       overflow: hidden;
-      margin-bottom: 24px;
     }
 
-    .card-header {
-      padding: 14px 18px;
-      border-bottom: 1px solid var(--border);
+    .tc-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .card-title { font-size: 14px; font-weight: 600; }
+    .tc-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
 
     table {
       width: 100%;
@@ -204,266 +558,383 @@
       text-align: left;
     }
     th {
-      background: #0d0d10;
-      color: var(--text-dim);
-      font-weight: 600;
+      background: #0d0f14;
+      padding: 12px 18px;
       font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-tertiary);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      font-family: var(--mono);
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border-subtle);
     }
     td {
-      padding: 12px 16px;
-      border-bottom: 1px solid #1a1a20;
-      color: var(--text);
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     }
-    tr:hover td { background: rgba(255,255,255,0.015); }
-    .mono-cell { font-family: var(--mono); font-size: 12px; }
+    tr:hover td { background: rgba(255, 255, 255, 0.015); }
+    .mono { font-family: var(--font-mono); font-size: 12px; }
 
     /* Triage split layout */
-    .triage-grid {
+    .triage-split {
       display: grid;
-      grid-template-columns: 1.1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 20px;
     }
 
-    .email-row {
-      background: #151518;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 12px;
+    .email-item {
+      background: #151720;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 14px;
       margin-bottom: 10px;
       cursor: pointer;
       transition: all 0.15s ease;
     }
-    .email-row:hover { border-color: var(--accent); background: #1a1a20; }
-    .email-row.selected { border-color: var(--accent); background: #1e1e26; }
-    .email-row-head { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); font-family: var(--mono); margin-bottom: 4px; }
-    .email-row-subj { font-weight: 600; font-size: 13px; margin-bottom: 4px; color: #fff; }
-    .email-row-snip { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+    .email-item:hover, .email-item.selected {
+      border-color: var(--accent-gold);
+      background: #1a1d28;
+    }
+    .email-item-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-tertiary);
+      margin-bottom: 6px;
+    }
+    .email-item-subj {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
 
-    .preview-pre {
-      background: #09090b;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 14px;
-      font-family: var(--mono);
+    .proposal-preview-box {
+      background: #07080b;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: var(--font-mono);
       font-size: 12px;
-      color: #93c5fd;
+      color: #fde047;
       line-height: 1.6;
       white-space: pre-wrap;
-      max-height: 400px;
+      max-height: 380px;
       overflow-y: auto;
     }
 
-    /* Forms */
-    .form-group {
-      margin-bottom: 16px;
+    /* Terminal logs */
+    .terminal-container {
+      margin-top: 24px;
+      background: #07080b;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
     }
-    .form-label {
-      display: block;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      font-family: var(--mono);
+    .term-head {
+      background: #0d0f14;
+      padding: 10px 18px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-tertiary);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
     }
-    .form-input {
-      width: 100%;
-      background: #09090b;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 12px;
-      color: var(--text);
-      font-family: var(--sans);
-      font-size: 13px;
-    }
-    .form-input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    /* Console terminal */
-    .log-terminal {
-      background: #070709;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
-      font-family: var(--mono);
+    .term-body {
+      padding: 16px;
+      font-family: var(--font-mono);
       font-size: 12px;
       color: #a1a1aa;
-      height: 160px;
+      height: 150px;
       overflow-y: auto;
       line-height: 1.5;
     }
-    .log-line { margin-bottom: 3px; }
-    .log-time { color: var(--text-dim); }
+    .term-line { margin-bottom: 4px; }
+    .term-time { color: var(--text-tertiary); }
 
     /* Modal */
-    .modal-overlay {
+    .modal-backdrop {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(4px);
-      z-index: 100;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 200;
       align-items: center;
       justify-content: center;
     }
-    .modal-overlay.open { display: flex; }
-    .modal-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      width: 520px;
+    .modal-backdrop.open { display: flex; }
+    .modal-content {
+      background: var(--bg-surface);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      width: 500px;
       max-width: 95vw;
-      padding: 24px;
+      padding: 28px;
     }
-    .modal-head {
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; font-family: var(--font-mono); }
+    .form-ctrl {
+      width: 100%;
+      background: #090a0e;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      font-family: var(--font-main);
+      font-size: 13px;
+    }
+    .form-ctrl:focus { outline: none; border-color: var(--accent-gold); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* Footer */
+    footer {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 40px 32px 60px 32px;
+      border-top: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 18px;
+      color: var(--text-tertiary);
+      font-size: 13px;
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Header -->
-  <header>
-    <div class="brand-row">
-      <span class="brand-title">Mermail Relayer Sentinel</span>
-      <span class="status-badge"><span class="status-dot"></span> Sentinel Active</span>
-    </div>
-    <div class="header-meta">
-      <div class="meta-item">Mailbox: <strong id="hdr-mailbox">mbx_ops_sentinel_01</strong></div>
-      <div class="meta-item">PayBox: <strong id="hdr-paybox" style="color: var(--success);">Connected</strong></div>
-      <div class="meta-item">Daily Cap: <strong id="hdr-cap">$500.00 USD</strong></div>
+  <!-- Navigation -->
+  <header class="nav-wrapper">
+    <a href="#" class="brand-group">
+      <div class="brand-mark">⬡</div>
+      <span class="brand-title">Mermail Sentinel</span>
+    </a>
+
+    <nav class="nav-pill-menu">
+      <a class="nav-item active" onclick="scrollToSection('hero')">Ecosystem</a>
+      <a class="nav-item" onclick="scrollToSection('console')">Operations</a>
+      <a class="nav-item" onclick="scrollToSection('relayers-tab')">Relayers</a>
+      <a class="nav-item" onclick="scrollToSection('inbox-tab')">Alerts</a>
+      <a class="nav-item" onclick="scrollToSection('docs-section')">Architecture</a>
+    </nav>
+
+    <div class="nav-actions">
+      <button class="btn-nav-cta" onclick="scrollToSection('console')">Launch Console &rarr;</button>
     </div>
   </header>
 
-  <!-- Navigation and Actions -->
-  <div class="action-bar">
-    <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('relayers')">Relayers & Balances</button>
-      <button class="tab-btn" onclick="switchTab('inbox')">Alerts & Triage</button>
-      <button class="tab-btn" onclick="switchTab('history')">Audit History</button>
-      <button class="tab-btn" onclick="switchTab('settings')">Risk Policy</button>
+  <!-- Hero Section -->
+  <section class="hero-container" id="hero">
+    <div class="hero-content">
+      <h1>
+        Autonomous Web3 Guardian for <br>
+        <span class="gold-highlight">Relayer Gas Liquidity</span>
+      </h1>
+
+      <div class="hero-subtext-box">
+        <span class="bullet">✦</span>
+        <p>
+          Eliminate relayer and paymaster gas starvation outages. Ingests alerts from Helius and Tenderly, verifies cryptographically anchored allowlists, and triggers PayBox treasury replenishment with dual-control confirmation.
+        </p>
+      </div>
+
+      <div class="hero-cta-group">
+        <button class="btn-hero-primary" onclick="scrollToSection('console')">Launch Operations &rarr;</button>
+        <a class="btn-hero-secondary" onclick="scrollToSection('docs-section')">System Specification &rarr;</a>
+      </div>
     </div>
 
-    <div class="action-group">
-      <button class="btn btn-primary" onclick="scanInbox()">Scan Inbox</button>
-      <button class="btn" onclick="simulateAlert('solana', 0.042)">Trigger Low Gas Alert</button>
-      <button class="btn btn-danger" onclick="simulateAttack()">Test Prompt Injection</button>
-      <button class="btn" onclick="refreshAll()">Refresh</button>
+    <!-- Right Hero Visual: Glowing Amber Glass Stack + Floating Markets Card -->
+    <div class="hero-visual-wrapper">
+      <div class="amber-card-glow"></div>
+      <div class="amber-glass-stack"></div>
+      <div class="amber-glass-stack-2"></div>
+
+      <div class="floating-markets-card">
+        <div class="fmc-header">Allowlisted Relayers</div>
+
+        <div class="market-row">
+          <div>
+            <div class="market-info-name">Jupiter DEX Relayer</div>
+            <div class="market-info-network">SOLANA (SOL)</div>
+          </div>
+          <div class="market-arrow">&rarr;</div>
+        </div>
+
+        <div class="market-row">
+          <div>
+            <div class="market-info-name">ERC-4337 Paymaster</div>
+            <div class="market-info-network">BASE (ETH)</div>
+          </div>
+          <div class="market-arrow">&rarr;</div>
+        </div>
+
+        <div class="market-row">
+          <div>
+            <div class="market-info-name">Superteam Devnet</div>
+            <div class="market-info-network">SOLANA (SOL)</div>
+          </div>
+          <div class="market-arrow">&rarr;</div>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="main-content">
+  <!-- Integrations Bar -->
+  <section class="integrations-bar">
+    <span class="integration-label">Validated Integrations</span>
+    <div class="partner-logos">
+      <div class="partner-logo-item"><span class="partner-dot"></span> Helius Webhooks</div>
+      <div class="partner-logo-item"><span class="partner-dot"></span> Tenderly Alerts</div>
+      <div class="partner-logo-item"><span class="partner-dot"></span> Mermail PayBox</div>
+      <div class="partner-logo-item"><span class="partner-dot"></span> Solana Mainnet</div>
+      <div class="partner-logo-item"><span class="partner-dot"></span> Base Network</div>
+    </div>
+  </section>
 
-    <!-- TAB 1: RELAYERS -->
-    <div id="tab-relayers" class="tab-pane active">
-      <div class="metrics-row">
-        <div class="metric-card">
-          <div class="metric-label">Active Relayers</div>
-          <div class="metric-value" id="m-active-relayers">3</div>
-          <div class="metric-sub">Monitored on Solana & Base</div>
+  <!-- Section 2: Ecosystem Summary -->
+  <section class="section-intro" id="docs-section">
+    <h2>Sentinel<br>Ecosystem</h2>
+    <p>
+      Production Web3 applications suffer costly downtime when backend relayers burn native gas during unexpected volume spikes. Mermail Relayer Sentinel turns Mermail into an automated, zero-trust replenishment engine with mathematical shortfall calculus, live on-chain RPC validation, and operator-controlled PayBox execution.
+    </p>
+  </section>
+
+  <!-- 3-Column Ecosystem Cards matching Dribbble reference -->
+  <section class="ecosystem-cards-grid">
+    <div class="eco-card">
+      <div class="eco-card-title">Zero-Trust Input Sanitization</div>
+      <div class="eco-card-desc">
+        Inbound emails are treated strictly as passive data. Content sanitization strips prompt-injection attempts and enforces Base58 and EIP-55 address validation before lookup.
+      </div>
+    </div>
+
+    <div class="eco-card">
+      <div class="eco-card-title">Deficit Calculus & Buffer</div>
+      <div class="eco-card-desc">
+        Computes exact replenishment requirements with a 25% safety buffer to absorb gas volatility. Validates outflows against single-topup and 24-hour aggregate budget limits.
+      </div>
+    </div>
+
+    <div class="eco-card">
+      <div class="eco-card-title">Dual-Control PayBox Settlement</div>
+      <div class="eco-card-desc">
+        Disbursements require operator authorization via structured preview. Returns secure console deep links and posts signed transaction receipts back to the alert thread.
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Live Operations Console -->
+  <section class="console-section" id="console">
+    <div class="console-header-card">
+      <div class="console-status-row">
+        <div class="cs-item">
+          <span class="cs-label">Service Status</span>
+          <span class="cs-val" style="color: var(--success);">Online &bull; Monitoring</span>
         </div>
-        <div class="metric-card">
-          <div class="metric-label">24h Budget Spent</div>
-          <div class="metric-value" id="m-spent">$0.00</div>
-          <div class="metric-sub" id="m-spent-sub">of $500.00 daily limit</div>
+        <div class="cs-item">
+          <span class="cs-label">Mailbox Scope</span>
+          <span class="cs-val" id="c-mailbox">mbx_ops_sentinel_01</span>
         </div>
-        <div class="metric-card">
-          <div class="metric-label">Unread Deficits</div>
-          <div class="metric-value" id="m-unread-deficits">0</div>
-          <div class="metric-sub">Awaiting operator triage</div>
+        <div class="cs-item">
+          <span class="cs-label">PayBox Link</span>
+          <span class="cs-val" style="color: var(--accent-gold);">ACTIVE (Operator)</span>
         </div>
-        <div class="metric-card">
-          <div class="metric-label">Treasury Reserves</div>
-          <div class="metric-value" id="m-treasury">5.42 SOL</div>
-          <div class="metric-sub">2,500 USDC available</div>
+        <div class="cs-item">
+          <span class="cs-label">24h Budget Spent</span>
+          <span class="cs-val" id="c-budget">$0.00 / $500.00 USD</span>
         </div>
       </div>
 
-      <div class="data-card">
-        <div class="card-header">
-          <span class="card-title">Allowlisted Relayers</span>
-          <button class="btn btn-sm btn-primary" onclick="openAddRelayerModal()">+ Add Relayer</button>
+      <div class="console-controls">
+        <button class="btn-action btn-gold" onclick="scanInbox()">Scan Inbox</button>
+        <button class="btn-action" onclick="simulateAlert('solana', 0.042)">Trigger Low Gas Alert</button>
+        <button class="btn-action btn-danger-outline" onclick="simulateAttack()">Test Prompt Injection</button>
+        <button class="btn-action" onclick="loadAll()">Refresh</button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs for Operations Console -->
+    <div class="console-tabs">
+      <button class="c-tab active" id="tab-btn-relayers" onclick="switchConsoleTab('relayers')">Allowlisted Relayers</button>
+      <button class="c-tab" id="tab-btn-inbox" onclick="switchConsoleTab('inbox')">Alert Triage & Proposals</button>
+      <button class="c-tab" id="tab-btn-history" onclick="switchConsoleTab('history')">Audit History</button>
+      <button class="c-tab" id="tab-btn-policy" onclick="switchConsoleTab('policy')">Risk Policy</button>
+    </div>
+
+    <!-- TAB 1: Relayers Table -->
+    <div class="tab-view active" id="view-relayers">
+      <div class="table-card">
+        <div class="tc-header">
+          <span class="tc-title">Configured Execution Relayers</span>
+          <button class="btn-action btn-gold" style="padding: 6px 12px; font-size: 11px;" onclick="openAddModal()">+ Add Relayer</button>
         </div>
         <table>
           <thead>
             <tr>
               <th>Status</th>
               <th>Relayer Name</th>
-              <th>Network</th>
+              <th>Chain</th>
               <th>Target Address</th>
               <th>Threshold</th>
-              <th>Target Balance</th>
-              <th>On-Chain Balance</th>
+              <th>Target</th>
+              <th>Live On-Chain Balance</th>
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="relayers-tbody">
-            <!-- Rendered by JS -->
+          <tbody id="relayers-table-body">
+            <!-- Populated via JS -->
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- TAB 2: INBOX & TRIAGE -->
-    <div id="tab-inbox" class="tab-pane">
-      <div class="triage-grid">
-        <div class="data-card">
-          <div class="card-header">
-            <span class="card-title">Inbound Alert Messages</span>
-            <span class="mono-cell" id="inbox-count" style="font-size: 11px; color: var(--text-dim);">0 messages</span>
+    <!-- TAB 2: Alerts & Triage -->
+    <div class="tab-view" id="view-inbox">
+      <div class="triage-split">
+        <div class="table-card">
+          <div class="tc-header">
+            <span class="tc-title">Inbound Alert Messages</span>
+            <span class="mono" id="unread-count" style="color: var(--text-tertiary);">0 unread</span>
           </div>
-          <div style="padding: 16px;" id="inbox-container">
-            <!-- Rendered by JS -->
+          <div style="padding: 18px;" id="emails-container">
+            <!-- Populated via JS -->
           </div>
         </div>
 
-        <div class="data-card">
-          <div class="card-header">
-            <span class="card-title">Replenishment Proposal Preview</span>
-            <span class="mono-cell" id="triage-status-pill" style="font-size: 11px; color: var(--text-dim);">Idle</span>
+        <div class="table-card">
+          <div class="tc-header">
+            <span class="tc-title">Replenishment Proposal Preview</span>
+            <span class="mono" id="preview-status" style="color: var(--text-tertiary);">Awaiting Triage</span>
           </div>
-          <div style="padding: 16px;">
-            <pre class="preview-pre" id="preview-display">Select an alert from the list to evaluate and preview the replenishment proposal.</pre>
-            <div id="triage-actions" style="margin-top: 14px; display: none;">
-              <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px;" onclick="approveCurrentIncident()">
-                Authorize & Execute PayBox Transfer
+          <div style="padding: 18px;">
+            <pre class="proposal-preview-box" id="proposal-box">Select an alert message on the left to evaluate deficit and preview the PayBox replenishment proposal.</pre>
+            <div id="proposal-actions" style="margin-top: 16px; display: none;">
+              <button class="btn-action btn-gold" style="width: 100%; justify-content: center; padding: 12px;" onclick="approveIncident()">
+                Authorize & Execute PayBox Transfer &rarr;
               </button>
             </div>
-            <div id="settlement-result" style="display: none; margin-top: 14px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); padding: 12px; border-radius: 6px; font-family: var(--mono); font-size: 12px;">
-              <div style="color: var(--success); font-weight: 600; margin-bottom: 4px;">Transfer Settled on Blockchain</div>
-              <div id="settlement-body"></div>
+            <div id="tx-success-box" style="display: none; margin-top: 16px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 8px; padding: 14px; font-family: var(--font-mono); font-size: 12px;">
+              <div style="color: var(--success); font-weight: 700; margin-bottom: 6px;">On-Chain Transfer Confirmed</div>
+              <div id="tx-details"></div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- TAB 3: AUDIT HISTORY -->
-    <div id="tab-history" class="tab-pane">
-      <div class="data-card">
-        <div class="card-header">
-          <span class="card-title">Execution Audit Log</span>
-          <a href="/api/history/export" class="btn btn-sm">Export CSV</a>
+    <!-- TAB 3: Audit History -->
+    <div class="tab-view" id="view-history">
+      <div class="table-card">
+        <div class="tc-header">
+          <span class="tc-title">Treasury Execution History</span>
+          <a href="/api/history/export" class="btn-action" style="text-decoration: none;">Download CSV</a>
         </div>
         <table>
           <thead>
             <tr>
               <th>Timestamp</th>
-              <th>Event Type</th>
+              <th>Type</th>
               <th>Relayer / Target</th>
               <th>Chain</th>
               <th>Amount</th>
@@ -471,84 +942,84 @@
               <th>Tx Hash</th>
             </tr>
           </thead>
-          <tbody id="history-tbody">
-            <!-- Rendered by JS -->
+          <tbody id="history-table-body">
+            <!-- Populated via JS -->
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- TAB 4: SETTINGS / RISK POLICY -->
-    <div id="tab-settings" class="tab-pane">
-      <div class="data-card" style="max-width: 680px;">
-        <div class="card-header">
-          <span class="card-title">Treasury Risk Policy & Limits</span>
+    <!-- TAB 4: Risk Policy Form -->
+    <div class="tab-view" id="view-policy">
+      <div class="table-card" style="max-width: 650px;">
+        <div class="tc-header">
+          <span class="tc-title">Treasury Safety Caps</span>
         </div>
-        <div style="padding: 20px;">
-          <form id="policy-form" onsubmit="savePolicy(event)">
+        <div style="padding: 24px;">
+          <form onsubmit="handlePolicySave(event)">
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Rolling 24-Hour Cap (USD)</label>
-                <input type="number" step="10" class="form-input" id="cfg-daily-cap" value="500">
+                <label class="form-label">Daily Spend Cap (USD)</label>
+                <input type="number" step="10" class="form-ctrl" id="policy-daily" value="500">
               </div>
               <div class="form-group">
-                <label class="form-label">Max Single Top-Up (USD)</label>
-                <input type="number" step="10" class="form-input" id="cfg-single-cap" value="150">
+                <label class="form-label">Single Top-Up Ceiling (USD)</label>
+                <input type="number" step="10" class="form-ctrl" id="policy-single" value="150">
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">Gas Buffer Multiplier</label>
-                <input type="number" step="0.05" class="form-input" id="cfg-buffer" value="1.25">
+                <input type="number" step="0.05" class="form-ctrl" id="policy-buffer" value="1.25">
               </div>
               <div class="form-group">
-                <label class="form-label">Require Human Confirmation</label>
-                <select class="form-input" id="cfg-human-req">
-                  <option value="true">Enabled (Strict Dual-Control)</option>
-                  <option value="false">Disabled (Autonomous Devnet Mode)</option>
+                <label class="form-label">Dual-Control Confirmation</label>
+                <select class="form-ctrl" id="policy-confirm">
+                  <option value="true">Strict Dual-Control (Required)</option>
+                  <option value="false">Autonomous Mode (Devnet)</option>
                 </select>
               </div>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Save Configuration</button>
+            <button type="submit" class="btn-action btn-gold" style="margin-top: 8px;">Save Changes</button>
           </form>
         </div>
       </div>
     </div>
 
-    <!-- Live Event Log -->
-    <div style="margin-top: 24px;">
-      <div style="font-size: 12px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; font-family: var(--mono); margin-bottom: 8px;">
-        Real-Time Operations Log
+    <!-- Terminal Event Stream -->
+    <div class="terminal-container">
+      <div class="term-head">
+        <span>LIVE MCP TOOL & AUDIT EVENT STREAM</span>
+        <span style="color: var(--accent-gold);">SSE Connected</span>
       </div>
-      <div class="log-terminal" id="terminal">
-        <div class="log-line"><span class="log-time">[SYSTEM]</span> Mermail Relayer Sentinel operations console connected.</div>
+      <div class="term-body" id="term-logs">
+        <div class="term-line"><span class="term-time">[SYSTEM]</span> Mermail Sentinel operator interface connected. Monitoring active.</div>
       </div>
     </div>
+  </section>
 
-  </div>
-
-  <!-- Add Relayer Modal -->
-  <div class="modal-overlay" id="add-modal">
-    <div class="modal-box">
-      <div class="modal-head">
-        <span style="font-weight: 600;">Add Allowlisted Relayer</span>
-        <button class="btn btn-sm" onclick="closeAddRelayerModal()">Cancel</button>
+  <!-- Modal: Add Relayer -->
+  <div class="modal-backdrop" id="add-modal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <span style="font-size: 16px; font-weight: 700;">Add Execution Relayer</span>
+        <button class="btn-action" style="padding: 4px 10px;" onclick="closeAddModal()">Cancel</button>
       </div>
-      <form onsubmit="handleAddRelayer(event)">
+      <form onsubmit="handleAddSubmit(event)">
         <div class="form-group">
           <label class="form-label">Relayer ID (Slug)</label>
-          <input type="text" class="form-input" id="add-id" placeholder="e.g. solana-bridge-relayer-01" required>
+          <input type="text" class="form-ctrl" id="modal-id" placeholder="e.g. solana-dex-relayer-02" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Friendly Name</label>
-          <input type="text" class="form-input" id="add-name" placeholder="e.g. Wormhole Execution Relayer" required>
+          <label class="form-label">Relayer Name</label>
+          <input type="text" class="form-ctrl" id="modal-name" placeholder="e.g. Raydium Swap Relayer" required>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Blockchain Network</label>
-            <select class="form-input" id="add-chain">
+            <label class="form-label">Blockchain</label>
+            <select class="form-ctrl" id="modal-chain">
               <option value="solana">Solana</option>
               <option value="base">Base</option>
               <option value="ethereum">Ethereum</option>
@@ -556,55 +1027,78 @@
           </div>
           <div class="form-group">
             <label class="form-label">Alert Sender Email</label>
-            <input type="email" class="form-input" id="add-sender" placeholder="alerts@helius.dev">
+            <input type="email" class="form-ctrl" id="modal-sender" placeholder="alerts@helius.dev">
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Target Wallet Address</label>
-          <input type="text" class="form-input" id="add-address" placeholder="Base58 on Solana or 0x on EVM" required>
+          <label class="form-label">Destination Wallet Address</label>
+          <input type="text" class="form-ctrl" id="modal-address" placeholder="Base58 on Solana or 0x on EVM" required>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Deficit Threshold</label>
-            <input type="number" step="0.001" class="form-input" id="add-threshold" value="0.1" required>
+            <label class="form-label">Low Threshold</label>
+            <input type="number" step="0.001" class="form-ctrl" id="modal-threshold" value="0.1" required>
           </div>
           <div class="form-group">
             <label class="form-label">Target Balance</label>
-            <input type="number" step="0.001" class="form-input" id="add-target" value="0.5" required>
+            <input type="number" step="0.001" class="form-ctrl" id="modal-target" value="0.5" required>
           </div>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 8px;">Register Relayer</button>
+        <button type="submit" class="btn-action btn-gold" style="width: 100%; justify-content: center; padding: 12px; margin-top: 8px;">
+          Register to Allowlist
+        </button>
       </form>
     </div>
   </div>
 
+  <!-- Footer -->
+  <footer>
+    <div>Mermail Relayer Sentinel &bull; Open-Source Web3 Infrastructure</div>
+    <div>Built for Mermail Agent Skills & Superteam Earn 2026</div>
+  </footer>
+
   <script>
     let activeIncident = null;
 
-    function log(msg) {
-      const term = document.getElementById('terminal');
+    function logTerm(msg) {
+      const box = document.getElementById('term-logs');
       const time = new Date().toLocaleTimeString();
       const div = document.createElement('div');
-      div.className = 'log-line';
-      div.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
-      term.appendChild(div);
-      term.scrollTop = term.scrollHeight;
+      div.className = 'term-line';
+      div.innerHTML = `<span class="term-time">[${time}]</span> ${msg}`;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
     }
 
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      document.getElementById('tab-' + tabId).classList.add('active');
-      event.target.classList.add('active');
-      if (tabId === 'history') loadHistory();
-      if (tabId === 'inbox') loadEmails();
+    function scrollToSection(id) {
+      if (id === 'relayers-tab') {
+        switchConsoleTab('relayers');
+        document.getElementById('console').scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+      if (id === 'inbox-tab') {
+        switchConsoleTab('inbox');
+        document.getElementById('console').scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function switchConsoleTab(tab) {
+      document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.c-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById('view-' + tab).classList.add('active');
+      document.getElementById('tab-btn-' + tab).classList.add('active');
+      if (tab === 'history') loadHistory();
+      if (tab === 'inbox') loadEmails();
     }
 
     function setupSSE() {
       const es = new EventSource('/api/events');
       es.addEventListener('log', e => {
         const d = JSON.parse(e.data);
-        log(d.payload.message);
+        logTerm(d.payload.message);
       });
       es.addEventListener('new_alert', () => {
         loadEmails();
@@ -612,13 +1106,13 @@
       });
       es.addEventListener('attack_intercepted', e => {
         const d = JSON.parse(e.data);
-        log(`[SECURITY INTERCEPTION] Sanitized and quarantined attack from ${d.payload.attackEmail.from}`);
-        alert(`SECURITY DEFENSE ACTIVATED:\n\nAdversarial Prompt-Injection detected and blocked.\nReason: Disallowed target address and instruction override attempt.\nAction: Email quarantined, zero funds moved.`);
+        logTerm(`[SECURITY ALERT] Attack intercepted from ${d.payload.attackEmail.from}. Quarantined.`);
+        alert(`SECURITY SHIELD ACTIVATED:\n\nAdversarial Prompt-Injection detected and quarantined.\nTarget address was not in allowlist.\nZero treasury funds moved.`);
         loadEmails();
       });
       es.addEventListener('replenishment_settled', e => {
         const d = JSON.parse(e.data);
-        log(`[SETTLEMENT] On-chain transfer complete. TxHash: ${d.payload.txHash}`);
+        logTerm(`[SETTLEMENT] On-chain transfer finalized: ${d.payload.txHash}`);
         loadStatus();
         loadHistory();
       });
@@ -629,48 +1123,48 @@
         const res = await fetch('/api/status');
         const data = await res.json();
 
-        document.getElementById('hdr-mailbox').innerText = data.agent.defaultMailbox;
-        document.getElementById('hdr-cap').innerText = `$${data.budget.remaining.toFixed(2)} / $${data.budget.dailyCap} USD`;
-        document.getElementById('m-active-relayers').innerText = data.relayers.filter(r => r.enabled).length;
-        document.getElementById('m-spent').innerText = `$${data.budget.recentSpend.toFixed(2)}`;
-        document.getElementById('m-spent-sub').innerText = `of $${data.budget.dailyCap} limit`;
+        document.getElementById('c-mailbox').innerText = data.agent.defaultMailbox;
+        document.getElementById('c-budget').innerText = `$${data.budget.recentSpend.toFixed(2)} / $${data.budget.dailyCap} USD`;
 
-        // Populate settings form
         if (data.policy) {
-          document.getElementById('cfg-daily-cap').value = data.policy.maxDailyTopUpUsd || 500;
-          document.getElementById('cfg-single-cap').value = data.policy.maxSingleTopUpUsd || 150;
-          document.getElementById('cfg-buffer').value = data.policy.defaultGasBufferMultiplier || 1.25;
+          document.getElementById('policy-daily').value = data.policy.maxDailyTopUpUsd || 500;
+          document.getElementById('policy-single').value = data.policy.maxSingleTopUpUsd || 150;
+          document.getElementById('policy-buffer').value = data.policy.defaultGasBufferMultiplier || 1.25;
         }
 
-        renderRelayersTable(data.relayers);
+        renderRelayers(data.relayers || []);
       } catch (err) {
-        log(`[ERROR] Failed to load status: ${err.message}`);
+        logTerm(`[ERROR] Failed to load status: ${err.message}`);
       }
     }
 
-    function renderRelayersTable(relayers) {
-      const tbody = document.getElementById('relayers-tbody');
+    function renderRelayers(relayers) {
+      const tbody = document.getElementById('relayers-table-body');
       tbody.innerHTML = '';
       relayers.forEach(r => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>
-            <span class="status-badge" style="${r.enabled ? '' : 'background: rgba(113,113,122,0.1); color: var(--text-dim); border-color: #3f3f46;'}">
-              <span class="status-dot"></span> ${r.enabled ? 'Active' : 'Disabled'}
+            <span class="mono" style="color: ${r.enabled ? 'var(--success)' : 'var(--text-tertiary)'}; font-weight: 600;">
+              ${r.enabled ? '● ACTIVE' : '○ DISABLED'}
             </span>
           </td>
-          <td style="font-weight: 500;">${r.name}</td>
-          <td><span class="mono-cell" style="text-transform: uppercase;">${r.chain}</span></td>
-          <td class="mono-cell" title="${r.address}">${r.address.substring(0, 10)}...${r.address.substring(r.address.length - 6)}</td>
-          <td class="mono-cell">${r.minThreshold} ${r.token}</td>
-          <td class="mono-cell">${r.targetBalance} ${r.token}</td>
-          <td class="mono-cell" id="bal-${r.id}">
-            <button class="btn btn-sm" onclick="checkLiveBalance('${r.id}')">Check RPC</button>
+          <td style="font-weight: 600;">${r.name}</td>
+          <td><span class="mono" style="text-transform: uppercase;">${r.chain}</span></td>
+          <td class="mono" title="${r.address}">${r.address.substring(0, 8)}...${r.address.substring(r.address.length - 6)}</td>
+          <td class="mono">${r.minThreshold} ${r.token}</td>
+          <td class="mono">${r.targetBalance} ${r.token}</td>
+          <td class="mono" id="rpc-${r.id}">
+            <button class="btn-action" style="padding: 3px 8px; font-size: 11px;" onclick="checkRpcBalance('${r.id}')">Check RPC</button>
           </td>
           <td>
-            <div style="display: flex; gap: 4px;">
-              <button class="btn btn-sm" onclick="toggleRelayer('${r.id}', ${!r.enabled})">${r.enabled ? 'Disable' : 'Enable'}</button>
-              <button class="btn btn-sm btn-danger" onclick="deleteRelayer('${r.id}')">Delete</button>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn-action" style="padding: 3px 8px; font-size: 11px;" onclick="toggleRelayer('${r.id}', ${!r.enabled})">
+                ${r.enabled ? 'Disable' : 'Enable'}
+              </button>
+              <button class="btn-action btn-danger-outline" style="padding: 3px 8px; font-size: 11px;" onclick="deleteRelayer('${r.id}')">
+                Delete
+              </button>
             </div>
           </td>
         `;
@@ -678,42 +1172,42 @@
       });
     }
 
-    async function checkLiveBalance(relayerId) {
-      const cell = document.getElementById(`bal-${relayerId}`);
+    async function checkRpcBalance(relayerId) {
+      const cell = document.getElementById(`rpc-${relayerId}`);
       cell.innerText = 'Querying...';
       try {
         const res = await fetch(`/api/relayers/${encodeURIComponent(relayerId)}/balance`, { method: 'POST' });
         const data = await res.json();
         if (data.success) {
-          cell.innerHTML = `<strong>${data.balance}</strong> ${data.unit}`;
+          cell.innerHTML = `<span style="color: var(--accent-gold); font-weight: 700;">${data.balance}</span> ${data.unit}`;
         } else {
-          cell.innerHTML = `<span style="color: var(--warning);" title="${data.error}">Offline/Mock</span>`;
+          cell.innerHTML = `<span style="color: var(--text-tertiary);" title="${data.error}">Offline</span>`;
         }
       } catch (err) {
-        cell.innerText = 'Err';
+        cell.innerText = 'Error';
       }
     }
 
-    async function toggleRelayer(relayerId, enableState) {
+    async function toggleRelayer(id, enableState) {
       try {
-        await fetch(`/api/relayers/${encodeURIComponent(relayerId)}`, {
+        await fetch(`/api/relayers/${encodeURIComponent(id)}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ enabled: enableState })
         });
         loadStatus();
       } catch (err) {
-        log(`[ERROR] Toggle failed: ${err.message}`);
+        logTerm(`[ERROR] Toggle failed: ${err.message}`);
       }
     }
 
-    async function deleteRelayer(relayerId) {
-      if (!confirm(`Delete relayer ${relayerId} from allowlist?`)) return;
+    async function deleteRelayer(id) {
+      if (!confirm(`Remove relayer ${id} from allowlist?`)) return;
       try {
-        await fetch(`/api/relayers/${encodeURIComponent(relayerId)}`, { method: 'DELETE' });
+        await fetch(`/api/relayers/${encodeURIComponent(id)}`, { method: 'DELETE' });
         loadStatus();
       } catch (err) {
-        log(`[ERROR] Delete failed: ${err.message}`);
+        logTerm(`[ERROR] Delete failed: ${err.message}`);
       }
     }
 
@@ -722,41 +1216,40 @@
         const res = await fetch('/api/emails');
         const data = await res.json();
         const emails = data.emails || [];
-        const container = document.getElementById('inbox-container');
-        document.getElementById('inbox-count').innerText = `${emails.length} unread`;
-        document.getElementById('m-unread-deficits').innerText = emails.length;
+        const container = document.getElementById('emails-container');
+        document.getElementById('unread-count').innerText = `${emails.length} unread`;
 
         container.innerHTML = '';
         if (emails.length === 0) {
-          container.innerHTML = '<div style="color: var(--text-dim); text-align: center; padding: 24px; font-size: 13px;">No unread alert emails in mailbox.</div>';
+          container.innerHTML = '<div style="color: var(--text-tertiary); text-align: center; padding: 24px;">No unread deficit alerts in mailbox.</div>';
           return;
         }
 
         emails.forEach(e => {
           const div = document.createElement('div');
-          div.className = 'email-row';
+          div.className = 'email-item';
           div.onclick = () => selectAlert(e, div);
           div.innerHTML = `
-            <div class="email-row-head">
+            <div class="email-item-head">
               <span>${e.from}</span>
               <span>${new Date(e.date).toLocaleTimeString()}</span>
             </div>
-            <div class="email-row-subj">${e.subject}</div>
-            <div class="email-row-snip">${(e.body?.text || '').substring(0, 80)}...</div>
+            <div class="email-item-subj">${e.subject}</div>
+            <div class="mono" style="font-size: 11px; color: var(--text-tertiary);">${(e.body?.text || '').substring(0, 80)}...</div>
           `;
           container.appendChild(div);
         });
       } catch (err) {
-        log(`[ERROR] Failed to load inbox: ${err.message}`);
+        logTerm(`[ERROR] Failed to load alerts: ${err.message}`);
       }
     }
 
     async function selectAlert(email, el) {
-      document.querySelectorAll('.email-row').forEach(r => r.classList.remove('selected'));
+      document.querySelectorAll('.email-item').forEach(r => r.classList.remove('selected'));
       el.classList.add('selected');
 
-      document.getElementById('preview-display').innerText = 'Evaluating alert and calculating shortfall...';
-      document.getElementById('settlement-result').style.display = 'none';
+      document.getElementById('proposal-box').innerText = 'Evaluating alert and calculating shortfall...';
+      document.getElementById('tx-success-box').style.display = 'none';
 
       try {
         const res = await fetch('/api/triage', {
@@ -767,29 +1260,29 @@
         const incident = await res.json();
         activeIncident = incident;
 
-        const previewEl = document.getElementById('preview-display');
-        const actionsEl = document.getElementById('triage-actions');
-        const pill = document.getElementById('triage-status-pill');
+        const pBox = document.getElementById('proposal-box');
+        const acts = document.getElementById('proposal-actions');
+        const pill = document.getElementById('preview-status');
 
         if (incident.status === 'AWAITING_OPERATOR_APPROVAL') {
-          previewEl.innerText = incident.preview;
-          actionsEl.style.display = 'block';
-          pill.innerText = 'Approval Pending';
-          pill.style.color = 'var(--warning)';
+          pBox.innerText = incident.preview;
+          acts.style.display = 'block';
+          pill.innerText = 'Ready for Authorization';
+          pill.style.color = 'var(--accent-gold)';
         } else {
-          previewEl.innerText = `[TRIAGE RESULT: REJECTED]\nReason: ${incident.reason}\n\n${JSON.stringify(incident.alert, null, 2)}`;
-          actionsEl.style.display = 'none';
+          pBox.innerText = `[TRIAGE RESULT: REJECTED]\nReason: ${incident.reason}\n\n${JSON.stringify(incident.alert, null, 2)}`;
+          acts.style.display = 'none';
           pill.innerText = 'Rejected / Quarantined';
           pill.style.color = 'var(--danger)';
         }
       } catch (err) {
-        log(`[ERROR] Triage failed: ${err.message}`);
+        logTerm(`[ERROR] Triage failed: ${err.message}`);
       }
     }
 
-    async function approveCurrentIncident() {
+    async function approveIncident() {
       if (!activeIncident) return;
-      log(`[EXECUTE] Operator approving replenishment for ${activeIncident.relayerName}...`);
+      logTerm(`[OPERATOR] Approving replenishment for ${activeIncident.relayerName}...`);
       try {
         const res = await fetch('/api/approve', {
           method: 'POST',
@@ -797,34 +1290,34 @@
           body: JSON.stringify({ incident: activeIncident })
         });
         const result = await res.json();
-        document.getElementById('triage-actions').style.display = 'none';
-        const box = document.getElementById('settlement-result');
-        const body = document.getElementById('settlement-body');
+        document.getElementById('proposal-actions').style.display = 'none';
+        const box = document.getElementById('tx-success-box');
+        const details = document.getElementById('tx-details');
         box.style.display = 'block';
-        body.innerHTML = `
-          <div>Tx Hash: <a href="https://solscan.io/tx/${result.txHash}" target="_blank" style="color: #60a5fa; word-break: break-all;">${result.txHash}</a></div>
+        details.innerHTML = `
+          <div>Tx Hash: <a href="https://solscan.io/tx/${result.txHash}" target="_blank" style="color: var(--accent-gold); word-break: break-all;">${result.txHash}</a></div>
           <div>Request ID: ${result.requestId}</div>
-          <div style="color: var(--text-muted); margin-top: 4px;">Receipt dispatched back to email thread.</div>
+          <div style="color: var(--text-tertiary); margin-top: 4px;">Receipt dispatched to alert email thread.</div>
         `;
         loadEmails();
       } catch (err) {
-        log(`[ERROR] Approval failed: ${err.message}`);
+        logTerm(`[ERROR] Execution failed: ${err.message}`);
       }
     }
 
     async function scanInbox() {
-      log('[SCAN] Scanning Mermail inbox for unread alerts...');
+      logTerm('[SCAN] Triggering inbox scan for deficit alerts...');
       try {
         await fetch('/api/scan', { method: 'POST' });
         loadEmails();
         loadStatus();
       } catch (err) {
-        log(`[ERROR] Scan error: ${err.message}`);
+        logTerm(`[ERROR] Scan error: ${err.message}`);
       }
     }
 
     async function simulateAlert(chain, balance) {
-      log(`[SIMULATE] Generating simulated ${chain.toUpperCase()} deficit alert...`);
+      logTerm(`[SIMULATE] Injecting low-gas alert for ${chain.toUpperCase()}...`);
       try {
         await fetch('/api/simulate/alert', {
           method: 'POST',
@@ -833,16 +1326,16 @@
         });
         loadEmails();
       } catch (err) {
-        log(`[ERROR] Failed to inject alert: ${err.message}`);
+        logTerm(`[ERROR] Simulation error: ${err.message}`);
       }
     }
 
     async function simulateAttack() {
-      log('[SIMULATE] Injecting adversarial prompt-injection attack vector...');
+      logTerm('[SECURITY] Testing adversarial prompt-injection defense...');
       try {
         await fetch('/api/simulate/attack', { method: 'POST' });
       } catch (err) {
-        log(`[ERROR] Failed to inject attack: ${err.message}`);
+        logTerm(`[ERROR] Attack simulation failed: ${err.message}`);
       }
     }
 
@@ -850,32 +1343,32 @@
       try {
         const res = await fetch('/api/history?limit=50');
         const data = await res.json();
-        const tbody = document.getElementById('history-tbody');
+        const tbody = document.getElementById('history-table-body');
         tbody.innerHTML = '';
         (data.events || []).forEach(e => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td class="mono-cell">${new Date(e.timestamp).toLocaleTimeString()}</td>
-            <td><span class="mono-cell" style="font-size: 11px;">${e.type}</span></td>
+            <td class="mono">${new Date(e.timestamp).toLocaleTimeString()}</td>
+            <td><span class="mono" style="font-size: 11px;">${e.type}</span></td>
             <td>${e.relayerId || e.targetAddress || '—'}</td>
-            <td class="mono-cell">${(e.chain || '—').toUpperCase()}</td>
-            <td class="mono-cell">${e.amount || '—'}</td>
-            <td><span class="status-badge">${e.status || 'OK'}</span></td>
-            <td class="mono-cell">${e.txHash ? e.txHash.substring(0, 12) + '...' : '—'}</td>
+            <td class="mono">${(e.chain || '—').toUpperCase()}</td>
+            <td class="mono">${e.amount || '—'}</td>
+            <td><span class="mono" style="color: var(--success);">${e.status || 'OK'}</span></td>
+            <td class="mono">${e.txHash ? e.txHash.substring(0, 10) + '...' : '—'}</td>
           `;
           tbody.appendChild(tr);
         });
       } catch (err) {
-        log(`[ERROR] Failed to load history: ${err.message}`);
+        logTerm(`[ERROR] Failed to load history: ${err.message}`);
       }
     }
 
-    async function savePolicy(e) {
+    async function handlePolicySave(e) {
       e.preventDefault();
-      const dailyCap = Number(document.getElementById('cfg-daily-cap').value);
-      const singleCap = Number(document.getElementById('cfg-single-cap').value);
-      const buffer = Number(document.getElementById('cfg-buffer').value);
-      const reqHuman = document.getElementById('cfg-human-req').value === 'true';
+      const daily = Number(document.getElementById('policy-daily').value);
+      const single = Number(document.getElementById('policy-single').value);
+      const buffer = Number(document.getElementById('policy-buffer').value);
+      const reqConfirm = document.getElementById('policy-confirm').value === 'true';
 
       try {
         await fetch('/api/config', {
@@ -883,32 +1376,32 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             policy: {
-              maxDailyTopUpUsd: dailyCap,
-              maxSingleTopUpUsd: singleCap,
+              maxDailyTopUpUsd: daily,
+              maxSingleTopUpUsd: single,
               defaultGasBufferMultiplier: buffer,
-              requireHumanConfirmation: reqHuman
+              requireHumanConfirmation: reqConfirm
             }
           })
         });
-        log('[CONFIG] Policy settings saved.');
+        logTerm('[CONFIG] Policy settings updated successfully.');
         loadStatus();
       } catch (err) {
-        log(`[ERROR] Failed to save policy: ${err.message}`);
+        logTerm(`[ERROR] Policy save failed: ${err.message}`);
       }
     }
 
-    function openAddRelayerModal() { document.getElementById('add-modal').classList.add('open'); }
-    function closeAddRelayerModal() { document.getElementById('add-modal').classList.remove('open'); }
+    function openAddModal() { document.getElementById('add-modal').classList.add('open'); }
+    function closeAddModal() { document.getElementById('add-modal').classList.remove('open'); }
 
-    async function handleAddRelayer(e) {
+    async function handleAddSubmit(e) {
       e.preventDefault();
-      const id = document.getElementById('add-id').value.trim();
-      const name = document.getElementById('add-name').value.trim();
-      const chain = document.getElementById('add-chain').value;
-      const sender = document.getElementById('add-sender').value.trim();
-      const address = document.getElementById('add-address').value.trim();
-      const minThreshold = Number(document.getElementById('add-threshold').value);
-      const targetBalance = Number(document.getElementById('add-target').value);
+      const id = document.getElementById('modal-id').value.trim();
+      const name = document.getElementById('modal-name').value.trim();
+      const chain = document.getElementById('modal-chain').value;
+      const sender = document.getElementById('modal-sender').value.trim();
+      const address = document.getElementById('modal-address').value.trim();
+      const minThreshold = Number(document.getElementById('modal-threshold').value);
+      const targetBalance = Number(document.getElementById('modal-target').value);
 
       try {
         const res = await fetch('/api/relayers', {
@@ -918,9 +1411,9 @@
         });
         const data = await res.json();
         if (data.success) {
-          closeAddRelayerModal();
+          closeAddModal();
           loadStatus();
-          log(`[CONFIG] Relayer ${id} registered successfully.`);
+          logTerm(`[CONFIG] Added relayer ${id} to allowlist.`);
         } else {
           alert('Error: ' + data.error);
         }
@@ -929,13 +1422,13 @@
       }
     }
 
-    function refreshAll() {
+    function loadAll() {
       loadStatus();
       loadEmails();
-      log('[REFRESH] Updated all live data.');
+      logTerm('[REFRESH] State refreshed.');
     }
 
-    // Initialize
+    // Init
     setupSSE();
     loadStatus();
     loadEmails();
