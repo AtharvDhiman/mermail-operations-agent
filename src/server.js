@@ -282,6 +282,21 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // GET /api/rpc/balance?chain=...&address=... (Direct balance query for any wallet)
+    if (pathname === '/api/rpc/balance' && method === 'GET') {
+      const chain = parsedUrl.searchParams.get('chain') || 'solana';
+      const address = parsedUrl.searchParams.get('address');
+      if (!address) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing address parameter' }));
+        return;
+      }
+      const onChain = await getOnChainBalance(chain, address);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(onChain));
+      return;
+    }
+
     // POST /api/relayers/:id/topup (Instant manual replenishment)
     if (pathname.startsWith('/api/relayers/') && pathname.endsWith('/topup') && method === 'POST') {
       const relayerId = decodeURIComponent(pathname.replace('/api/relayers/', '').replace('/topup', ''));
