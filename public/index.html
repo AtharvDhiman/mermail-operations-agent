@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mermail Relayer Sentinel — Live Web3 Mission Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #080a11;
+      --card-bg: #0f1322;
+      --card-border: #1e2640;
+      --card-hover: #181f36;
+      --accent-solana: #9945FF;
+      --accent-solana-teal: #14F195;
+      --accent-blue: #0088ff;
+      --accent-warning: #ffb703;
+      --accent-danger: #ff3366;
+      --text-main: #f3f4f6;
+      --text-muted: #8b9bb4;
+      --mono-font: 'JetBrains Mono', monospace;
+      --sans-font: 'Outfit', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--sans-font);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Ambient glow */
+    .glow-bg {
+      position: fixed;
+      top: -150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(153,69,255,0.15) 0%, rgba(20,241,149,0.08) 50%, transparent 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Header */
+    header {
+      position: relative;
+      z-index: 10;
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(15, 19, 34, 0.7);
+      backdrop-filter: blur(16px);
+      padding: 16px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent-solana), var(--accent-solana-teal));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 0 20px rgba(153, 69, 255, 0.4);
+    }
+
+    .brand-text h1 {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--mono-font);
+    }
+
+    .badge-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-live { background: rgba(20, 241, 149, 0.15); color: var(--accent-solana-teal); border: 1px solid rgba(20, 241, 149, 0.3); }
+    .badge-cap { background: rgba(153, 69, 255, 0.15); color: var(--accent-solana); border: 1px solid rgba(153, 69, 255, 0.3); }
+
+    .header-stats {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .stat-pill {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 8px 14px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .stat-pill .label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-family: var(--mono-font); }
+    .stat-pill .value { font-size: 13px; font-weight: 600; font-family: var(--mono-font); color: #fff; }
+
+    /* Control Bar */
+    .controls-bar {
+      position: relative;
+      z-index: 10;
+      padding: 16px 28px;
+      display: flex;
+      gap: 12px;
+      background: rgba(8, 10, 17, 0.8);
+      border-bottom: 1px solid var(--card-border);
+      align-items: center;
+    }
+
+    .btn {
+      background: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-family: var(--sans-font);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .btn:hover { background: var(--card-hover); border-color: #3b486d; }
+    .btn-primary { background: linear-gradient(135deg, #7928ca, #4338ca); border: none; color: #fff; box-shadow: 0 4px 14px rgba(121, 40, 202, 0.4); }
+    .btn-primary:hover { opacity: 0.95; transform: translateY(-1px); }
+    .btn-sim-alert { background: rgba(255, 183, 3, 0.12); color: var(--accent-warning); border-color: rgba(255, 183, 3, 0.3); }
+    .btn-sim-alert:hover { background: rgba(255, 183, 3, 0.2); }
+    .btn-sim-attack { background: rgba(255, 51, 102, 0.12); color: var(--accent-danger); border-color: rgba(255, 51, 102, 0.3); }
+    .btn-sim-attack:hover { background: rgba(255, 51, 102, 0.2); }
+
+    /* Layout */
+    .container {
+      position: relative;
+      z-index: 10;
+      padding: 24px 28px;
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 1.2fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    .panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 19, 34, 0.5);
+    }
+    .panel-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-count {
+      font-family: var(--mono-font);
+      font-size: 11px;
+      background: #1c2438;
+      padding: 2px 8px;
+      border-radius: 12px;
+      color: var(--text-muted);
+    }
+
+    .panel-body {
+      padding: 16px;
+      flex: 1;
+      overflow-y: auto;
+      max-height: 520px;
+    }
+
+    /* Relayer Cards */
+    .relayer-card {
+      background: #13182b;
+      border: 1px solid #232b45;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+    }
+    .relayer-card:hover { border-color: #3f4c75; background: #171d33; }
+    .relayer-card.status-danger { border-left: 4px solid var(--accent-danger); }
+    .relayer-card.status-normal { border-left: 4px solid var(--accent-solana-teal); }
+
+    .rc-head {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      align-items: flex-start;
+    }
+    .rc-name { font-size: 13px; font-weight: 700; color: #fff; }
+    .rc-chain { font-size: 10px; font-family: var(--mono-font); padding: 2px 6px; border-radius: 4px; background: #1d253d; text-transform: uppercase; }
+    .rc-addr { font-family: var(--mono-font); font-size: 11px; color: var(--text-muted); margin-bottom: 10px; word-break: break-all; }
+    
+    .rc-balance-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 6px;
+      font-family: var(--mono-font);
+    }
+    .gauge-bg {
+      height: 6px;
+      background: #20273d;
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+    .gauge-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+
+    /* Email Items */
+    .email-item {
+      background: #13182b;
+      border: 1px solid #232b45;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .email-item:hover { border-color: var(--accent-solana); background: #181f36; }
+    .email-item.attack { border-color: rgba(255, 51, 102, 0.4); background: rgba(255, 51, 102, 0.05); }
+    .email-top { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+    .email-subject { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 6px; }
+    .email-preview { font-size: 11px; color: var(--text-muted); font-family: var(--mono-font); line-height: 1.4; }
+
+    /* Proposal Card */
+    .preview-box {
+      background: #080a11;
+      border: 1px solid #262f4d;
+      border-radius: 8px;
+      padding: 14px;
+      font-family: var(--mono-font);
+      font-size: 12px;
+      line-height: 1.6;
+      margin-bottom: 14px;
+      white-space: pre-wrap;
+      color: #7dd3fc;
+    }
+
+    /* Terminal Logs */
+    .terminal-panel {
+      position: relative;
+      z-index: 10;
+      margin: 0 28px 28px 28px;
+      background: #07090e;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .terminal-head {
+      background: #0d111d;
+      padding: 10px 16px;
+      font-size: 12px;
+      font-family: var(--mono-font);
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+    }
+    .terminal-body {
+      padding: 14px;
+      font-family: var(--mono-font);
+      font-size: 12px;
+      color: #94a3b8;
+      max-height: 180px;
+      overflow-y: auto;
+      line-height: 1.5;
+    }
+    .log-line { margin-bottom: 4px; }
+    .log-time { color: #475569; }
+    .log-info { color: #38bdf8; }
+    .log-success { color: #4ade80; }
+    .log-warn { color: #fbbf24; }
+    .log-error { color: #f87171; }
+
+    /* Security Radar list */
+    .sec-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #13182b;
+      border: 1px solid #232b45;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-family: var(--mono-font);
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-bg"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🛡️</div>
+      <div class="brand-text">
+        <h1>Mermail Relayer Sentinel <span class="badge-pill badge-live">Live Sentinel Active</span></h1>
+        <p>Autonomous Web3 Relayer Gas Monitoring & Treasury Rebalancing</p>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pill">
+        <span class="label">Mailbox Scope</span>
+        <span class="value" id="header-mailbox">mbx_ops_sentinel_01</span>
+      </div>
+      <div class="stat-pill">
+        <span class="label">PayBox Connection</span>
+        <span class="value" style="color: var(--accent-solana-teal);">ACTIVE (Operator)</span>
+      </div>
+      <div class="stat-pill">
+        <span class="label">24h Budget Cap</span>
+        <span class="value" id="header-budget">$500.00 USD</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Controls Bar -->
+  <div class="controls-bar">
+    <button class="btn btn-primary" onclick="triggerScan()">🔍 Scan Inbox & Triage</button>
+    <button class="btn btn-sim-alert" onclick="simulateAlert()">⚠️ Trigger Helius Deficit Alert (0.045 SOL)</button>
+    <button class="btn btn-sim-attack" onclick="simulateAttack()">🚨 Test Adversarial Prompt Injection</button>
+    <button class="btn" onclick="fetchState()">🔄 Refresh Balances</button>
+    <span id="scan-status" style="font-size: 12px; color: var(--text-muted); font-family: var(--mono-font); margin-left: 8px;"></span>
+  </div>
+
+  <!-- Main Tri-Column Layout -->
+  <div class="container">
+    <!-- Col 1: Allowlisted Relayer Radar -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📡 Allowlisted Relayers Radar</div>
+        <div class="panel-count" id="relayer-count">3 Registered</div>
+      </div>
+      <div class="panel-body" id="relayers-container">
+        <!-- Relayers will render here -->
+      </div>
+    </div>
+
+    <!-- Col 2: Mermail Inbox Feed -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📬 Mermail Inbound Alerts</div>
+        <div class="panel-count" id="emails-count">Loading...</div>
+      </div>
+      <div class="panel-body" id="emails-container">
+        <!-- Inbound emails will render here -->
+      </div>
+    </div>
+
+    <!-- Col 3: Proposal & Execution Console -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">⚡ Treasury Operations Console</div>
+        <div class="panel-count" id="console-status">Dual-Control Gate</div>
+      </div>
+      <div class="panel-body">
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">
+          Zero-Trust Security Radar
+        </div>
+        <div class="sec-item">
+          <span>Prompt-Injection Defense</span>
+          <span style="color: var(--accent-solana-teal);">✔ ACTIVE</span>
+        </div>
+        <div class="sec-item">
+          <span>Base58 / EVM Format Guard</span>
+          <span style="color: var(--accent-solana-teal);">✔ VERIFIED</span>
+        </div>
+        <div class="sec-item">
+          <span>Daily Cap Enforcement</span>
+          <span style="color: var(--accent-solana-teal);">$500 Limit OK</span>
+        </div>
+
+        <div style="margin-top: 16px; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">
+          Transaction Proposal Preview
+        </div>
+        <div class="preview-box" id="preview-content">Awaiting triage or alert selection...</div>
+
+        <div id="action-buttons" style="display: none;">
+          <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px;" onclick="approveReplenishment()">
+            🔐 Authorize & Execute PayBox Transfer
+          </button>
+        </div>
+
+        <div id="settlement-box" style="display: none; margin-top: 14px; background: rgba(20, 241, 149, 0.1); border: 1px solid rgba(20, 241, 149, 0.3); padding: 12px; border-radius: 8px; font-size: 12px; font-family: var(--mono-font);">
+          <div style="color: var(--accent-solana-teal); font-weight: 700; margin-bottom: 4px;">✅ SETTLED ON-CHAIN (Solana Mainnet)</div>
+          <div id="settlement-details" style="color: #fff; word-break: break-all;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Log Terminal -->
+  <div class="terminal-panel">
+    <div class="terminal-head">
+      <span>🖥️ SENTINEL AUDIT & LIVE MCP LOG STREAM</span>
+      <span style="color: var(--accent-solana-teal);">Connected to SSE Stream</span>
+    </div>
+    <div class="terminal-body" id="terminal-logs">
+      <div class="log-line"><span class="log-time">[INIT]</span> <span class="log-info">Mermail Relayer Sentinel UI connected. Listening to real-time events...</span></div>
+    </div>
+  </div>
+
+  <script>
+    let currentIncident = null;
+    let cachedEmails = [];
+
+    function log(msg, type = 'info') {
+      const logs = document.getElementById('terminal-logs');
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.className = 'log-line';
+      div.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-${type}">${msg}</span>`;
+      logs.appendChild(div);
+      logs.scrollTop = logs.scrollHeight;
+    }
+
+    // Connect to Server-Sent Events (SSE)
+    function setupSSE() {
+      const evtSource = new EventSource('/api/events');
+      evtSource.addEventListener('log', (e) => {
+        const data = JSON.parse(e.data);
+        log(data.payload.message, 'info');
+      });
+      evtSource.addEventListener('new_alert', (e) => {
+        const data = JSON.parse(e.data);
+        log(`⚡ Inbound alert detected: ${data.payload.subject}`, 'warn');
+        fetchEmails();
+      });
+      evtSource.addEventListener('attack_intercepted', (e) => {
+        const data = JSON.parse(e.data);
+        log(`🛡️ Prompt injection intercepted! Target ${data.payload.attackEmail.subject} quarantined.`, 'error');
+        alert(`🚨 SECURITY DEFENSE TRIGGERED:\n\nAdversarial Prompt-Injection attack detected and neutralized!\n\nVerdict: ${data.payload.verdict}\nAction: ${data.payload.action}`);
+        fetchEmails();
+      });
+      evtSource.addEventListener('replenishment_settled', (e) => {
+        const data = JSON.parse(e.data);
+        log(`🎉 PayBox transfer settled on-chain! Tx: ${data.payload.txHash}`, 'success');
+        fetchState();
+      });
+    }
+
+    async function fetchState() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        
+        document.getElementById('header-mailbox').innerText = data.agent.defaultMailbox;
+        document.getElementById('header-budget').innerText = `$${data.budget.remaining.toFixed(2)} / $${data.budget.dailyCap} USD`;
+
+        renderRelayers(data.relayers);
+        fetchEmails();
+        log('State refreshed successfully.', 'info');
+      } catch (err) {
+        log('Failed to fetch status: ' + err.message, 'error');
+      }
+    }
+
+    function renderRelayers(relayers) {
+      const container = document.getElementById('relayers-container');
+      container.innerHTML = '';
+      document.getElementById('relayer-count').innerText = `${relayers.length} Registered`;
+
+      relayers.forEach(r => {
+        const isLow = r.currentBalance !== undefined ? r.currentBalance < r.threshold : false;
+        const card = document.createElement('div');
+        card.className = `relayer-card ${isLow ? 'status-danger' : 'status-normal'}`;
+        card.innerHTML = `
+          <div class="rc-head">
+            <span class="rc-name">${r.name}</span>
+            <span class="rc-chain">${r.chain}</span>
+          </div>
+          <div class="rc-addr">${r.address}</div>
+          <div class="rc-balance-row">
+            <span>Threshold: ${r.threshold} ${r.asset}</span>
+            <span style="font-weight: 700; color: ${isLow ? 'var(--accent-danger)' : 'var(--accent-solana-teal)'};">
+              Target: ${r.targetBalance} ${r.asset}
+            </span>
+          </div>
+          <div class="gauge-bg">
+            <div class="gauge-fill" style="width: ${Math.min(100, (r.threshold / r.targetBalance) * 100)}%; background: ${isLow ? 'var(--accent-danger)' : 'var(--accent-solana-teal)'};"></div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function fetchEmails() {
+      try {
+        const res = await fetch('/api/emails');
+        const data = await res.json();
+        cachedEmails = data.emails || [];
+        const container = document.getElementById('emails-container');
+        container.innerHTML = '';
+        document.getElementById('emails-count').innerText = `${cachedEmails.length} Unread`;
+
+        if (cachedEmails.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; text-align: center; padding: 20px;">No unread alerts in inbox. System healthy.</div>';
+          return;
+        }
+
+        cachedEmails.forEach((email, idx) => {
+          const isAttack = email.subject.toLowerCase().includes('emergency') || email.subject.toLowerCase().includes('compromised');
+          const item = document.createElement('div');
+          item.className = `email-item ${isAttack ? 'attack' : ''}`;
+          item.onclick = () => selectAndTriageEmail(email);
+          item.innerHTML = `
+            <div class="email-top">
+              <span>${email.from}</span>
+              <span>${new Date(email.date).toLocaleTimeString()}</span>
+            </div>
+            <div class="email-subject">${isAttack ? '🚨 ' : '⚠️ '}${email.subject}</div>
+            <div class="email-preview">${email.body?.text ? email.body.text.substring(0, 90) + '...' : ''}</div>
+          `;
+          container.appendChild(item);
+        });
+      } catch (err) {
+        log('Failed to fetch emails: ' + err.message, 'error');
+      }
+    }
+
+    async function selectAndTriageEmail(email) {
+      log(`Selected alert [${email.id}] for triage...`, 'info');
+      try {
+        const res = await fetch('/api/triage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const incident = await res.json();
+        currentIncident = incident;
+
+        const previewEl = document.getElementById('preview-content');
+        const actionBtns = document.getElementById('action-buttons');
+        const settlementBox = document.getElementById('settlement-box');
+        settlementBox.style.display = 'none';
+
+        if (incident.status === 'AWAITING_OPERATOR_APPROVAL') {
+          previewEl.innerText = incident.preview;
+          actionBtns.style.display = 'block';
+          log(`Triage complete: ${incident.proposedTopUp} ${incident.token} replenishment proposed.`, 'warn');
+        } else {
+          previewEl.innerText = `STATUS: ${incident.status}\nREASON: ${incident.reason}\n${JSON.stringify(incident.alert, null, 2)}`;
+          actionBtns.style.display = 'none';
+          log(`Alert rejected/quarantined: ${incident.reason}`, 'error');
+        }
+      } catch (err) {
+        log('Triage failed: ' + err.message, 'error');
+      }
+    }
+
+    async function triggerScan() {
+      const statusEl = document.getElementById('scan-status');
+      statusEl.innerText = 'Scanning...';
+      log('Triggered manual inbox scan...', 'info');
+      try {
+        const res = await fetch('/api/scan', { method: 'POST' });
+        const data = await res.json();
+        statusEl.innerText = `Scan complete (${data.incidents?.length || 0} alerts triaged)`;
+        fetchState();
+        if (data.incidents && data.incidents.length > 0) {
+          const firstApprovable = data.incidents.find(i => i.status === 'AWAITING_OPERATOR_APPROVAL');
+          if (firstApprovable) {
+            currentIncident = firstApprovable;
+            document.getElementById('preview-content').innerText = firstApprovable.preview;
+            document.getElementById('action-buttons').style.display = 'block';
+          }
+        }
+      } catch (err) {
+        statusEl.innerText = 'Scan failed';
+        log('Scan failed: ' + err.message, 'error');
+      }
+    }
+
+    async function approveReplenishment() {
+      if (!currentIncident) return;
+      log(`Authorizing replenishment for ${currentIncident.relayerName}...`, 'info');
+      try {
+        const res = await fetch('/api/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ incident: currentIncident })
+        });
+        const result = await res.json();
+        
+        document.getElementById('action-buttons').style.display = 'none';
+        const settlementBox = document.getElementById('settlement-box');
+        const detailsEl = document.getElementById('settlement-details');
+        
+        settlementBox.style.display = 'block';
+        detailsEl.innerHTML = `
+          <div><strong>Request ID:</strong> ${result.requestId}</div>
+          <div><strong>Tx Hash:</strong> <a href="https://solscan.io/tx/${result.txHash}" target="_blank" style="color: #38bdf8;">${result.txHash}</a></div>
+          <div><strong>Receipt Dispatched:</strong> Thread Re: [RESOLVED] Relayer Gas Refueled</div>
+        `;
+        log(`Replenishment successfully settled!`, 'success');
+        fetchState();
+      } catch (err) {
+        log('Approval failed: ' + err.message, 'error');
+      }
+    }
+
+    async function simulateAlert() {
+      log('Injecting simulated low-gas alert from Helius...', 'warn');
+      try {
+        await fetch('/api/simulate/alert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chain: 'solana', balance: 0.042 })
+        });
+        fetchEmails();
+      } catch (err) {
+        log('Failed to simulate alert: ' + err.message, 'error');
+      }
+    }
+
+    async function simulateAttack() {
+      log('Injecting simulated prompt-injection attack...', 'error');
+      try {
+        await fetch('/api/simulate/attack', { method: 'POST' });
+      } catch (err) {
+        log('Failed to simulate attack: ' + err.message, 'error');
+      }
+    }
+
+    // Init
+    setupSSE();
+    fetchState();
+  </script>
+</body>
+</html>

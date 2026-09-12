@@ -9,6 +9,8 @@
   },
   "scripts": {
     "start": "node src/cli.js",
+    "serve": "node src/server.js",
+    "live": "node src/server.js",
     "demo": "node demo/run-demo.mjs",
     "test": "node --test tests/**/*.test.mjs",
     "test:skill": "node tests/validate-skill.mjs",
