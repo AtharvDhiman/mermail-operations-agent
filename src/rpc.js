@@ -91,3 +91,66 @@ export async function getOnChainBalance(chain, address, customRpcUrl = null) {
     };
   }
 }
+
+/**
+ * Fetch live network telemetry and gas fees for Solana and EVM chains.
+ * @returns {Promise<{ success: boolean, solana: object, base: object }>}
+ */
+export async function getNetworkMetrics() {
+  const result = {
+    timestamp: new Date().toISOString(),
+    solana: { status: 'offline' },
+    base: { status: 'offline' }
+  };
+
+  try {
+    // 1. Solana Epoch & Slot Telemetry
+    const solRes = await fetch(DEFAULT_RPC_ENDPOINTS.solana, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getEpochInfo' }),
+      signal: AbortSignal.timeout(5000)
+    });
+    if (solRes.ok) {
+      const solJson = await solRes.json();
+      if (solJson.result) {
+        result.solana = {
+          status: 'online',
+          epoch: solJson.result.epoch,
+          slot: solJson.result.absoluteSlot,
+          slotProgress: `${solJson.result.slotIndex} / ${solJson.result.slotsInEpoch}`,
+          blockHeight: solJson.result.blockHeight,
+          txCount: solJson.result.transactionCount
+        };
+      }
+    }
+  } catch (err) {
+    result.solana = { status: 'error', error: err.message };
+  }
+
+  try {
+    // 2. Base Gas Price Telemetry
+    const baseRes = await fetch(DEFAULT_RPC_ENDPOINTS.base, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_gasPrice', params: [] }),
+      signal: AbortSignal.timeout(5000)
+    });
+    if (baseRes.ok) {
+      const baseJson = await baseRes.json();
+      if (baseJson.result) {
+        const gwei = Number(BigInt(baseJson.result)) / 1e9;
+        result.base = {
+          status: 'online',
+          gasPriceGwei: Number(gwei.toFixed(4)),
+          rawWei: baseJson.result
+        };
+      }
+    }
+  } catch (err) {
+    result.base = { status: 'error', error: err.message };
+  }
+
+  return result;
+}
+

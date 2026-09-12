@@ -688,6 +688,100 @@
     .form-ctrl:focus { outline: none; border-color: var(--accent-gold); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
+    /* Real-Time Telemetry Strip */
+    .telemetry-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(18, 20, 26, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .tele-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+    }
+    .tele-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+    }
+    .tele-dot.pulsing {
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.4; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 0.4; transform: scale(0.9); }
+    }
+    .tele-label {
+      font-weight: 700;
+      color: var(--text-tertiary);
+      font-size: 10px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+    .tele-val {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* Analytics Dashboard Grid */
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .stat-card-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      margin-bottom: 8px;
+    }
+    .stat-card-value {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      margin-bottom: 4px;
+    }
+    .stat-card-sub {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent-gold);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
     /* Footer */
     footer {
       max-width: 1280px;
@@ -826,6 +920,27 @@
 
   <!-- Section 3: Live Operations Console -->
   <section class="console-section" id="console">
+    <!-- Real-Time On-Chain Telemetry & Autonomous Watchdog Strip -->
+    <div class="telemetry-bar">
+      <div class="tele-item">
+        <span class="tele-dot" id="sol-dot"></span>
+        <span class="tele-label">SOLANA MAINNET</span>
+        <span class="tele-val mono" id="sol-tele">Connecting RPC...</span>
+      </div>
+      <div class="tele-item">
+        <span class="tele-dot" id="base-dot"></span>
+        <span class="tele-label">BASE NETWORK</span>
+        <span class="tele-val mono" id="base-tele">Connecting RPC...</span>
+      </div>
+      <div class="tele-item">
+        <span class="tele-label">AUTONOMOUS WATCHDOG:</span>
+        <span class="mono" id="watchdog-state" style="color: var(--text-tertiary); font-weight: 700;">STANDBY</span>
+        <button class="btn-action" id="btn-watchdog-toggle" style="padding: 3px 10px; font-size: 11px;" onclick="toggleWatchdog()">
+          Start Watchdog
+        </button>
+      </div>
+    </div>
+
     <div class="console-header-card">
       <div class="console-status-row">
         <div class="cs-item">
@@ -860,6 +975,7 @@
       <button class="c-tab" id="tab-btn-inbox" onclick="switchConsoleTab('inbox')">Alert Triage & Proposals</button>
       <button class="c-tab" id="tab-btn-history" onclick="switchConsoleTab('history')">Audit History</button>
       <button class="c-tab" id="tab-btn-policy" onclick="switchConsoleTab('policy')">Risk Policy</button>
+      <button class="c-tab" id="tab-btn-analytics" onclick="switchConsoleTab('analytics')">Analytics & Notifications</button>
     </div>
 
     <!-- TAB 1: Relayers Table -->
@@ -988,6 +1104,64 @@
       </div>
     </div>
 
+    <!-- TAB 5: Analytics & Ops Integration -->
+    <div class="tab-view" id="view-analytics">
+      <div class="analytics-grid">
+        <div class="stat-card">
+          <div class="stat-card-title">Total Replenishments</div>
+          <div class="stat-card-value" id="ana-replenishments">0</div>
+          <div class="stat-card-sub" id="ana-breakdown">0.00 SOL &bull; 0.00 ETH</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">Attacks Quarantined</div>
+          <div class="stat-card-value" style="color: var(--danger);" id="ana-attacks">0</div>
+          <div class="stat-card-sub">Adversarial prompts neutralized</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">24h Budget Utilization</div>
+          <div class="stat-card-value" id="ana-utilization">0%</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="ana-progress" style="width: 0%;"></div>
+          </div>
+          <div class="stat-card-sub" style="margin-top: 6px;" id="ana-spend-sub">$0.00 spent of $500 cap</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">System Availability</div>
+          <div class="stat-card-value" style="color: var(--success);" id="ana-availability">99.98%</div>
+          <div class="stat-card-sub">Sovereign Sentinel Uptime: 24h</div>
+        </div>
+      </div>
+
+      <div class="table-card" style="margin-bottom: 24px;">
+        <div class="tc-header">
+          <span class="tc-title">External Ops & Webhook Dispatcher</span>
+          <span class="mono" id="webhook-badge" style="color: var(--text-tertiary);">No Webhook Configured</span>
+        </div>
+        <div style="padding: 24px;">
+          <form onsubmit="handleWebhookSave(event)">
+            <div class="form-group">
+              <label class="form-label">Discord / Slack / Telegram Incoming Webhook URL</label>
+              <div style="display: flex; gap: 10px;">
+                <input type="url" class="form-ctrl" id="webhook-url-input" placeholder="https://discord.com/api/webhooks/... or https://hooks.slack.com/services/...">
+                <button type="submit" class="btn-action btn-gold" style="white-space: nowrap;">Save Webhook</button>
+                <button type="button" class="btn-action" style="white-space: nowrap;" onclick="triggerTestPing()">Test Ping</button>
+              </div>
+              <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 6px;">
+                Dispatches operational alerts when relayers hit low gas thresholds, PayBox settlements finalize, or attacks are quarantined.
+              </div>
+            </div>
+          </form>
+
+          <div style="margin-top: 20px;">
+            <div class="cs-label" style="margin-bottom: 8px;">Recent Webhook Dispatches</div>
+            <div id="notifications-log" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); background: #090a0e; border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; max-height: 140px; overflow-y: auto;">
+              No dispatches recorded yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Terminal Event Stream -->
     <div class="terminal-container">
       <div class="term-head">
@@ -1051,6 +1225,46 @@
     </div>
   </div>
 
+  <!-- Modal: Instant Top-Up -->
+  <div class="modal-backdrop" id="topup-modal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <span style="font-size: 16px; font-weight: 700;">Manual Relayer Replenishment</span>
+        <button class="btn-action" style="padding: 4px 10px;" onclick="closeTopUpModal()">Cancel</button>
+      </div>
+      <form onsubmit="handleTopUpSubmit(event)">
+        <input type="hidden" id="topup-relayer-id">
+        <div class="form-group">
+          <label class="form-label">Target Relayer</label>
+          <input type="text" class="form-ctrl" id="topup-relayer-name" readonly style="opacity: 0.85;">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Network</label>
+            <input type="text" class="form-ctrl mono" id="topup-chain" readonly style="opacity: 0.85;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Asset</label>
+            <input type="text" class="form-ctrl mono" id="topup-token" readonly style="opacity: 0.85;">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Destination Address</label>
+          <input type="text" class="form-ctrl mono" id="topup-address" readonly style="opacity: 0.85; font-size: 11px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Replenishment Amount</label>
+          <input type="number" step="0.001" class="form-ctrl" id="topup-amount" required oninput="updateTopUpCostHint()">
+          <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;" id="topup-cost-hint">Estimated: ~$0.00 USD</div>
+        </div>
+        <button type="submit" class="btn-action btn-gold" id="btn-submit-topup" style="width: 100%; justify-content: center; padding: 12px; margin-top: 8px;">
+          Execute PayBox Disbursement &rarr;
+        </button>
+      </form>
+    </div>
+  </div>
+
+
   <!-- Footer -->
   <footer>
     <div>Mermail Relayer Sentinel &bull; Open-Source Web3 Infrastructure</div>
@@ -1092,6 +1306,7 @@
       document.getElementById('tab-btn-' + tab).classList.add('active');
       if (tab === 'history') loadHistory();
       if (tab === 'inbox') loadEmails();
+      if (tab === 'analytics') loadAnalytics();
     }
 
     function setupSSE() {
@@ -1115,6 +1330,11 @@
         logTerm(`[SETTLEMENT] On-chain transfer finalized: ${d.payload.txHash}`);
         loadStatus();
         loadHistory();
+        loadAnalytics();
+      });
+      es.addEventListener('watchdog_status', e => {
+        const d = JSON.parse(e.data);
+        updateWatchdogUI(d.payload);
       });
     }
 
@@ -1159,6 +1379,9 @@
           </td>
           <td>
             <div style="display: flex; gap: 6px;">
+              <button class="btn-action btn-gold" style="padding: 3px 8px; font-size: 11px;" onclick="openTopUpModal('${r.id}', '${r.name.replace(/'/g, "\\'")}', '${r.chain}', '${r.token}', '${r.address}', ${r.targetBalance})">
+                Top Up
+              </button>
               <button class="btn-action" style="padding: 3px 8px; font-size: 11px;" onclick="toggleRelayer('${r.id}', ${!r.enabled})">
                 ${r.enabled ? 'Disable' : 'Enable'}
               </button>
@@ -1422,9 +1645,218 @@
       }
     }
 
+    // Top-Up Modal Handlers
+    let currentTopUpRelayer = null;
+    function openTopUpModal(id, name, chain, token, address, defaultTarget) {
+      currentTopUpRelayer = { id, name, chain, token, address };
+      document.getElementById('topup-relayer-id').value = id;
+      document.getElementById('topup-relayer-name').value = `${name} (${id})`;
+      document.getElementById('topup-chain').value = chain.toUpperCase();
+      document.getElementById('topup-token').value = token;
+      document.getElementById('topup-address').value = address;
+      document.getElementById('topup-amount').value = defaultTarget || (token === 'SOL' ? 0.3 : 0.05);
+      updateTopUpCostHint();
+      document.getElementById('topup-modal').classList.add('open');
+    }
+
+    function closeTopUpModal() {
+      document.getElementById('topup-modal').classList.remove('open');
+      currentTopUpRelayer = null;
+    }
+
+    function updateTopUpCostHint() {
+      if (!currentTopUpRelayer) return;
+      const amount = Number(document.getElementById('topup-amount').value) || 0;
+      const rate = currentTopUpRelayer.token === 'SOL' ? 150 : 2600;
+      const usd = amount * rate;
+      document.getElementById('topup-cost-hint').innerText = `Estimated: ~$${usd.toFixed(2)} USD (at ~$${rate}/unit)`;
+    }
+
+    async function handleTopUpSubmit(e) {
+      e.preventDefault();
+      if (!currentTopUpRelayer) return;
+      const id = currentTopUpRelayer.id;
+      const amount = Number(document.getElementById('topup-amount').value);
+      const btn = document.getElementById('btn-submit-topup');
+      btn.disabled = true;
+      btn.innerText = 'Settling on PayBox...';
+
+      try {
+        const res = await fetch(`/api/relayers/${encodeURIComponent(id)}/topup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount })
+        });
+        const data = await res.json();
+        if (data.success) {
+          logTerm(`[SETTLED] Manual top-up confirmed! Tx: ${data.txHash} (${data.amount})`);
+          closeTopUpModal();
+          loadStatus();
+          loadHistory();
+          loadAnalytics();
+        } else {
+          alert(`Top-up failed: ${data.error}`);
+        }
+      } catch (err) {
+        alert(`Request failed: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Execute PayBox Disbursement →';
+      }
+    }
+
+    // Telemetry Handlers
+    async function loadTelemetry() {
+      try {
+        const res = await fetch('/api/network/telemetry');
+        const data = await res.json();
+        
+        if (data.solana && data.solana.status === 'online') {
+          document.getElementById('sol-tele').innerHTML = `Slot: <span style="color: var(--accent-gold); font-weight: 700;">${data.solana.slot}</span> &bull; Epoch: ${data.solana.epoch} &bull; ${Number(data.solana.txCount).toLocaleString()} TXs`;
+          document.getElementById('sol-dot').style.background = 'var(--success)';
+        } else {
+          document.getElementById('sol-tele').innerText = 'RPC Reconnecting...';
+          document.getElementById('sol-dot').style.background = 'var(--text-tertiary)';
+        }
+
+        if (data.base && data.base.status === 'online') {
+          document.getElementById('base-tele').innerHTML = `Gas: <span style="color: var(--accent-gold); font-weight: 700;">${data.base.gasPriceGwei}</span> Gwei`;
+          document.getElementById('base-dot').style.background = 'var(--success)';
+        } else {
+          document.getElementById('base-tele').innerText = 'RPC Standby';
+          document.getElementById('base-dot').style.background = 'var(--text-tertiary)';
+        }
+      } catch (err) {
+        // Silent fallback
+      }
+    }
+
+    // Watchdog Handlers
+    let watchdogActive = false;
+    async function loadWatchdogStatus() {
+      try {
+        const res = await fetch('/api/watchdog/status');
+        const data = await res.json();
+        updateWatchdogUI(data);
+      } catch (_) {}
+    }
+
+    function updateWatchdogUI(status) {
+      watchdogActive = status.isRunning;
+      const stateEl = document.getElementById('watchdog-state');
+      const btn = document.getElementById('btn-watchdog-toggle');
+      if (status.isRunning) {
+        stateEl.innerText = `ACTIVE (${status.checkCount} checks, ${status.deficitsFound} deficits)`;
+        stateEl.style.color = 'var(--success)';
+        btn.innerText = 'Stop Watchdog';
+        btn.className = 'btn-action btn-danger-outline';
+      } else {
+        stateEl.innerText = 'STANDBY';
+        stateEl.style.color = 'var(--text-tertiary)';
+        btn.innerText = 'Start Watchdog';
+        btn.className = 'btn-action';
+      }
+    }
+
+    async function toggleWatchdog() {
+      const endpoint = watchdogActive ? '/api/watchdog/stop' : '/api/watchdog/start';
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ intervalMs: 20000 })
+        });
+        const data = await res.json();
+        updateWatchdogUI(data.status);
+      } catch (err) {
+        logTerm(`[WATCHDOG ERROR] ${err.message}`);
+      }
+    }
+
+    // Analytics & Ops Handlers
+    async function loadAnalytics() {
+      try {
+        const [anaRes, notifRes] = await Promise.all([
+          fetch('/api/analytics'),
+          fetch('/api/notifications')
+        ]);
+        const ana = await anaRes.json();
+        const notif = await notifRes.json();
+
+        // Metrics
+        document.getElementById('ana-replenishments').innerText = ana.metrics.totalReplenishments;
+        document.getElementById('ana-breakdown').innerText = `${ana.metrics.totalSolReplenished} SOL • ${ana.metrics.totalEthReplenished} ETH`;
+        document.getElementById('ana-attacks').innerText = ana.metrics.attacksIntercepted;
+        document.getElementById('ana-utilization').innerText = `${ana.treasury.utilizationPercent}%`;
+        document.getElementById('ana-progress').style.width = `${ana.treasury.utilizationPercent}%`;
+        document.getElementById('ana-spend-sub').innerText = `$${ana.treasury.recentSpendUsd.toFixed(2)} spent of $${ana.treasury.dailyCapUsd} cap`;
+
+        // Webhook
+        if (notif.webhookUrl) {
+          document.getElementById('webhook-url-input').value = notif.webhookUrl;
+          document.getElementById('webhook-badge').innerText = 'Connected & Active';
+          document.getElementById('webhook-badge').style.color = 'var(--success)';
+        } else {
+          document.getElementById('webhook-badge').innerText = 'No Webhook Configured';
+          document.getElementById('webhook-badge').style.color = 'var(--text-tertiary)';
+        }
+
+        // Recent notifications
+        const notifBox = document.getElementById('notifications-log');
+        const recent = notif.recent || [];
+        if (recent.length === 0) {
+          notifBox.innerHTML = '<div style="color: var(--text-tertiary);">No external notifications dispatched yet.</div>';
+        } else {
+          notifBox.innerHTML = recent.map(n => `
+            <div style="margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.04);">
+              <span style="color: var(--accent-gold);">[${n.event}]</span>
+              <span style="color: var(--text-tertiary); font-size: 11px;">${new Date(n.timestamp).toLocaleTimeString()}</span> &bull; Status: ${n.status}
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        logTerm(`[ERROR] Failed loading analytics: ${err.message}`);
+      }
+    }
+
+    async function handleWebhookSave(e) {
+      e.preventDefault();
+      const webhookUrl = document.getElementById('webhook-url-input').value.trim();
+      try {
+        await fetch('/api/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ webhookUrl })
+        });
+        logTerm('[NOTIFICATIONS] Webhook destination URL saved.');
+        loadAnalytics();
+      } catch (err) {
+        alert('Failed saving webhook: ' + err.message);
+      }
+    }
+
+    async function triggerTestPing() {
+      logTerm('[NOTIFICATIONS] Dispatching test webhook ping...');
+      try {
+        const res = await fetch('/api/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ testPing: true })
+        });
+        const data = await res.json();
+        alert(`Test ping completed!\n\nStatus: ${data.ping.status}\nLogged ID: ${data.ping.id}`);
+        loadAnalytics();
+      } catch (err) {
+        alert('Ping failed: ' + err.message);
+      }
+    }
+
     function loadAll() {
       loadStatus();
       loadEmails();
+      loadTelemetry();
+      loadWatchdogStatus();
+      loadAnalytics();
       logTerm('[REFRESH] State refreshed.');
     }
 
@@ -1432,6 +1864,13 @@
     setupSSE();
     loadStatus();
     loadEmails();
+    loadTelemetry();
+    loadWatchdogStatus();
+    loadAnalytics();
+
+    // Auto-refresh network telemetry every 15 seconds
+    setInterval(loadTelemetry, 15000);
+    setInterval(loadWatchdogStatus, 10000);
   </script>
 </body>
 </html>

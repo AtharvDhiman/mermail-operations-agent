@@ -19,8 +19,11 @@ import { fileURLToPath } from 'node:url';
 import { MermailRelayerSentinel } from './sentinel-agent.js';
 import { loadConfig, saveConfig } from './config.js';
 import { defaultHistory } from './history.js';
-import { getOnChainBalance } from './rpc.js';
+import { getOnChainBalance, getNetworkMetrics } from './rpc.js';
 import { sanitizePromptInjection, validateAddressForChain, findAllowlistedRelayer } from './security.js';
+import { SentinelWatchdog } from './watchdog.js';
+import { defaultNotifier } from './notifications.js';
+import { getAnalyticsSummary } from './analytics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,6 +32,14 @@ const PUBLIC_DIR = path.resolve(__dirname, '../public');
 const PORT = Number(process.env.PORT) || 3333;
 let config = loadConfig();
 let agent = new MermailRelayerSentinel({ config });
+
+const watchdog = new SentinelWatchdog({
+  agent,
+  config,
+  onBroadcast: (type, payload) => broadcastEvent(type, payload),
+  intervalMs: 30000
+});
+
 
 const sseClients = new Set();
 
@@ -179,6 +190,7 @@ const server = http.createServer(async (req, res) => {
       config.relayers.push(newRelayer);
       saveConfig({ relayers: config.relayers });
       agent = new MermailRelayerSentinel({ config });
+      watchdog.updateConfig(config);
 
       defaultHistory.recordEvent('RELAYER_ADDED', { relayerId: id, chain, address });
       broadcastEvent('log', { message: `[CONFIG] Added allowlisted relayer: ${id} (${chain})` });
@@ -209,6 +221,7 @@ const server = http.createServer(async (req, res) => {
 
       saveConfig({ relayers: config.relayers });
       agent = new MermailRelayerSentinel({ config });
+      watchdog.updateConfig(config);
 
       defaultHistory.recordEvent('RELAYER_UPDATED', { relayerId, updates: body });
       broadcastEvent('log', { message: `[CONFIG] Updated relayer ${relayerId}` });
@@ -233,6 +246,7 @@ const server = http.createServer(async (req, res) => {
       config.relayers.splice(index, 1);
       saveConfig({ relayers: config.relayers });
       agent = new MermailRelayerSentinel({ config });
+      watchdog.updateConfig(config);
 
       defaultHistory.recordEvent('RELAYER_REMOVED', { relayerId });
       broadcastEvent('log', { message: `[CONFIG] Removed relayer ${relayerId} from allowlist` });
@@ -268,6 +282,95 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // POST /api/relayers/:id/topup (Instant manual replenishment)
+    if (pathname.startsWith('/api/relayers/') && pathname.endsWith('/topup') && method === 'POST') {
+      const relayerId = decodeURIComponent(pathname.replace('/api/relayers/', '').replace('/topup', ''));
+      const relayer = config.relayers.find(r => r.id === relayerId);
+
+      if (!relayer) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Relayer not found' }));
+        return;
+      }
+
+      if (!relayer.enabled) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Cannot top up disabled relayer' }));
+        return;
+      }
+
+      const body = await parseJsonBody(req);
+      const amount = Number(body.amount) || Number(relayer.targetBalance) || 0.1;
+      const token = relayer.token;
+      const rate = token === 'SOL' ? 150 : 2600;
+      const usdValue = amount * rate;
+
+      if (usdValue > (config.policy.maxSingleTopUpUsd || 150)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Amount ($${usdValue.toFixed(2)}) exceeds single top-up cap of $${config.policy.maxSingleTopUpUsd}` }));
+        return;
+      }
+
+      if (!agent.budgetTracker.canAfford(usdValue)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Amount ($${usdValue.toFixed(2)}) exceeds remaining daily budget` }));
+        return;
+      }
+
+      broadcastEvent('log', { message: `[PAYBOX] Operator triggered manual top-up of ${amount} ${token} for ${relayer.id}` });
+
+      const payboxRes = await agent.client.callTool('paybox_request_transfer', {
+        chain: relayer.chain,
+        token: token,
+        amount: amount.toString(),
+        destinationAddress: relayer.address
+      });
+
+      const execRes = await agent.client.callTool('paybox_get_request', {
+        requestId: payboxRes.requestId
+      });
+
+      agent.budgetTracker.recordDisbursement(usdValue, {
+        relayerId: relayer.id,
+        chain: relayer.chain,
+        amount: `${amount} ${token}`,
+        txHash: execRes.txHash
+      });
+
+      defaultHistory.recordEvent('MANUAL_TOPUP_EXECUTED', {
+        relayerId: relayer.id,
+        chain: relayer.chain,
+        amount: `${amount} ${token}`,
+        txHash: execRes.txHash,
+        status: execRes.status,
+        details: `Manual top-up by operator`
+      });
+
+      await defaultNotifier.dispatch('TRANSFER_SETTLED', {
+        relayerId: relayer.id,
+        amount: `${amount} ${token}`,
+        txHash: execRes.txHash
+      });
+
+      broadcastEvent('replenishment_settled', {
+        status: execRes.status,
+        requestId: payboxRes.requestId,
+        txHash: execRes.txHash,
+        amount: `${amount} ${token}`
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        requestId: payboxRes.requestId,
+        txHash: execRes.txHash,
+        amount: `${amount} ${token}`,
+        status: execRes.status
+      }));
+      return;
+    }
+
+
     // GET /api/config
     if (pathname === '/api/config' && method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -284,6 +387,7 @@ const server = http.createServer(async (req, res) => {
         config.maxSingleTopUpUsd = config.policy.maxSingleTopUpUsd || config.maxSingleTopUpUsd;
         saveConfig({ policy: config.policy });
         agent = new MermailRelayerSentinel({ config });
+        watchdog.updateConfig(config);
         defaultHistory.recordEvent('POLICY_UPDATED', { policy: config.policy });
         broadcastEvent('log', { message: `[CONFIG] Policy limits updated` });
       }
@@ -491,6 +595,79 @@ const server = http.createServer(async (req, res) => {
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(defenseReport));
+      return;
+    }
+
+    // GET /api/network/telemetry (Live on-chain telemetry & gas prices)
+    if (pathname === '/api/network/telemetry' && method === 'GET') {
+      const telemetry = await getNetworkMetrics();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(telemetry));
+      return;
+    }
+
+    // GET /api/analytics (Operational health and aggregates)
+    if (pathname === '/api/analytics' && method === 'GET') {
+      const analytics = getAnalyticsSummary(config, agent.budgetTracker);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(analytics));
+      return;
+    }
+
+    // GET /api/watchdog/status
+    if (pathname === '/api/watchdog/status' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(watchdog.getStatus()));
+      return;
+    }
+
+    // POST /api/watchdog/start
+    if (pathname === '/api/watchdog/start' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const interval = Number(body.intervalMs) || 30000;
+      watchdog.start(interval);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, status: watchdog.getStatus() }));
+      return;
+    }
+
+    // POST /api/watchdog/stop
+    if (pathname === '/api/watchdog/stop' && method === 'POST') {
+      watchdog.stop();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, status: watchdog.getStatus() }));
+      return;
+    }
+
+    // GET /api/notifications
+    if (pathname === '/api/notifications' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        webhookUrl: defaultNotifier.webhookUrl,
+        enabled: defaultNotifier.enabled,
+        recent: defaultNotifier.getRecentNotifications()
+      }));
+      return;
+    }
+
+    // POST /api/notifications
+    if (pathname === '/api/notifications' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      if (body.webhookUrl !== undefined) {
+        defaultNotifier.setWebhookUrl(body.webhookUrl);
+      }
+      if (body.testPing) {
+        const pingRes = await defaultNotifier.dispatch('TEST_PING', {
+          source: 'Mermail Relayer Sentinel Console',
+          timestamp: new Date().toISOString()
+        });
+        broadcastEvent('log', { message: `[NOTIFICATIONS] Dispatched test webhook ping (${pingRes.status})` });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, ping: pingRes }));
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, webhookUrl: defaultNotifier.webhookUrl, enabled: defaultNotifier.enabled }));
       return;
     }
   } catch (apiErr) {
