@@ -1,0 +1,34 @@
+{
+  "name": "mermail-relayer-sentinel",
+  "version": "1.0.0",
+  "description": "Autonomous Relayer Gas & Treasury Liquidity Sentinel for Mermail Agent Skills",
+  "type": "module",
+  "main": "src/sentinel-agent.js",
+  "bin": {
+    "mermail-sentinel": "bin/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "demo": "node demo/run-demo.mjs",
+    "test": "node --test tests/**/*.test.mjs",
+    "test:skill": "node tests/validate-skill.mjs",
+    "validate": "node tests/validate-skill.mjs && node --test tests/**/*.test.mjs"
+  },
+  "keywords": [
+    "mermail",
+    "agent-skill",
+    "paybox",
+    "solana",
+    "web3",
+    "relayer",
+    "gas-sentinel",
+    "treasury",
+    "superteam",
+    "mcp"
+  ],
+  "author": "Mermail Relayer Sentinel Builders",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

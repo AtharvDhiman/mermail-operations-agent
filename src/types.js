@@ -1,0 +1,30 @@
+/**
+ * Mermail Relayer Sentinel Data Types & Invariants
+ */
+
+export const SentinelStatus = {
+  IDLE: 'IDLE',
+  SCANNING: 'SCANNING',
+  ALERT_DETECTED: 'ALERT_DETECTED',
+  ALLOWLIST_VERIFIED: 'ALLOWLIST_VERIFIED',
+  TREASURY_CHECKED: 'TREASURY_CHECKED',
+  AWAITING_OPERATOR_APPROVAL: 'AWAITING_OPERATOR_APPROVAL',
+  SIGNING_PENDING: 'SIGNING_PENDING',
+  SETTLED_ON_CHAIN: 'SETTLED_ON_CHAIN',
+  REJECTED_SECURITY_VIOLATION: 'REJECTED_SECURITY_VIOLATION',
+  REJECTED_OVER_CAP: 'REJECTED_OVER_CAP',
+  CANCELLED: 'CANCELLED',
+  ERROR: 'ERROR'
+};
+
+export const SupportedChains = {
+  SOLANA: 'solana',
+  BASE: 'base',
+  ETHEREUM: 'ethereum'
+};
+
+export const SupportedTokens = {
+  SOL: 'SOL',
+  ETH: 'ETH',
+  USDC: 'USDC'
+};

@@ -1,0 +1,48 @@
+{
+  "version": "1.0.0",
+  "policy": {
+    "maxDailyTopUpUsd": 500.0,
+    "maxSingleTopUpUsd": 150.0,
+    "requireHumanConfirmation": true,
+    "defaultGasBufferMultiplier": 1.25,
+    "allowlistedChains": ["solana", "base", "ethereum"]
+  },
+  "relayers": [
+    {
+      "id": "solana-mainnet-relayer-01",
+      "name": "Jupiter DEX Execution Relayer",
+      "chain": "solana",
+      "token": "SOL",
+      "address": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+      "minThreshold": 0.1,
+      "targetBalance": 0.5,
+      "maxSingleTopUp": 1.0,
+      "alertEmailSender": "alerts@helius.dev",
+      "enabled": true
+    },
+    {
+      "id": "solana-devnet-relayer-01",
+      "name": "Superteam Hackathon Relayer",
+      "chain": "solana",
+      "token": "SOL",
+      "address": "DemoRe1ayerWa11etAddressForSo1anaSuperteam11",
+      "minThreshold": 0.05,
+      "targetBalance": 0.3,
+      "maxSingleTopUp": 0.5,
+      "alertEmailSender": "devops@quicknode.com",
+      "enabled": true
+    },
+    {
+      "id": "base-paymaster-relayer-01",
+      "name": "ERC-4337 Account Abstraction Paymaster",
+      "chain": "base",
+      "token": "ETH",
+      "address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+      "minThreshold": 0.02,
+      "targetBalance": 0.1,
+      "maxSingleTopUp": 0.2,
+      "alertEmailSender": "notify@tenderly.co",
+      "enabled": true
+    }
+  ]
+}
