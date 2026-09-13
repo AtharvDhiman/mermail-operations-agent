@@ -3,6 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { ActionRiskLevel, ApprovalStatus } from './types.js';
 import { memory } from './memory.js';
+import { audit } from './audit.js';
 import { logger } from './logger.js';
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
@@ -249,11 +250,21 @@ export class SafetyEngine {
   }
 
   /**
-   * Creates a formal dual-control approval request with a unique token and impact preview.
+   * Evaluates if an approval token has exceeded its validity window (default: 24 hours)
+   */
+  isExpired(request, maxAgeMs = 24 * 60 * 60 * 1000) {
+    if (!request || !request.createdAt) return false;
+    const age = Date.now() - new Date(request.createdAt).getTime();
+    return age > maxAgeMs;
+  }
+
+  /**
+   * Creates a formal dual-control approval request with a unique token, 128-bit entropy, and impact preview.
    */
   createApprovalRequest({ taskId, action, target, payload, rationale, riskReason }) {
-    const token = `APPR-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    const token = `APPR-${crypto.randomBytes(16).toString('hex').toUpperCase()}`;
     const payloadText = typeof payload === 'string' ? payload : JSON.stringify(payload || {});
+    const payloadHash = crypto.createHash('sha256').update(payloadText).digest('hex');
     const sensitiveCheck = SafetyEngine.scanSensitiveData(payloadText);
 
     const approval = {
@@ -262,6 +273,7 @@ export class SafetyEngine {
       action,
       target: target || 'external',
       payload,
+      payloadHash,
       rationale: rationale || 'Required for task completion',
       riskReason: riskReason || 'High-impact operation',
       status: ApprovalStatus.PENDING,
@@ -286,9 +298,17 @@ export class SafetyEngine {
    * Validates and approves a pending token.
    */
   approve(token, operator = 'operator') {
+    if (!token || typeof token !== 'string') {
+      throw new Error('Approval token must be a valid non-empty string.');
+    }
     const request = this.pendingApprovals.get(token);
     if (!request) {
       throw new Error(`Approval token '${token}' not found.`);
+    }
+    if (this.isExpired(request)) {
+      request.status = ApprovalStatus.EXPIRED;
+      this.save();
+      throw new Error(`Approval token '${token}' has expired.`);
     }
     if (request.status !== ApprovalStatus.PENDING) {
       throw new Error(`Approval token '${token}' is already ${request.status}.`);
@@ -307,6 +327,15 @@ export class SafetyEngine {
       timestamp: request.approvedAt
     });
 
+    audit.record({
+      taskId: request.taskId,
+      action: 'APPROVAL_GRANTED',
+      actor: operator,
+      tool: request.action,
+      status: 'APPROVED',
+      details: { token, rationale: request.rationale, operator }
+    });
+
     this.save();
     logger.info(`Action approved [${token}] by ${operator}`, { taskId: request.taskId, token });
     return request;
@@ -316,6 +345,9 @@ export class SafetyEngine {
    * Rejects a pending approval token.
    */
   reject(token, operator = 'operator', reason = 'Operator rejected execution') {
+    if (!token || typeof token !== 'string') {
+      throw new Error('Approval token must be a valid non-empty string.');
+    }
     const request = this.pendingApprovals.get(token);
     if (!request) {
       throw new Error(`Approval token '${token}' not found.`);
@@ -336,6 +368,15 @@ export class SafetyEngine {
       operator,
       rationale: reason,
       timestamp: request.rejectedAt
+    });
+
+    audit.record({
+      taskId: request.taskId,
+      action: 'APPROVAL_REJECTED',
+      actor: operator,
+      tool: request.action,
+      status: 'REJECTED',
+      details: { token, reason, operator }
     });
 
     this.save();

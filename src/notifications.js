@@ -12,8 +12,30 @@ export class NotificationDispatcher {
   }
 
   setWebhookUrl(url) {
-    this.webhookUrl = url;
-    this.enabled = Boolean(url);
+    if (!url || typeof url !== 'string' || url.trim() === '') {
+      this.webhookUrl = null;
+      this.enabled = false;
+      return;
+    }
+
+    const trimmed = url.trim();
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        throw new Error('Only HTTP and HTTPS webhook URLs are allowed');
+      }
+
+      const hostname = parsed.hostname.toLowerCase();
+      const BLOCKED_HOSTS = ['169.254.169.254', '169.254.170.2', 'metadata.google.internal', 'metadata.internal'];
+      if (BLOCKED_HOSTS.includes(hostname) || hostname.endsWith('.internal')) {
+        throw new Error('Access to cloud metadata endpoints is strictly prohibited');
+      }
+
+      this.webhookUrl = trimmed;
+      this.enabled = true;
+    } catch (err) {
+      throw new Error(`Invalid webhook URL: ${err.message}`);
+    }
   }
 
   /**

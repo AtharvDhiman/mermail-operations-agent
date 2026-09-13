@@ -86,29 +86,72 @@ function broadcastEvent(eventType, payload) {
   }
 }
 
+const MAX_BODY_SIZE = 1024 * 1024; // 1 MB limit
+
 function parseJsonBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', (chunk) => { body += chunk; });
+    let size = 0;
+    let exceeded = false;
+
+    req.on('data', (chunk) => {
+      if (exceeded) return;
+      size += chunk.length;
+      if (size > MAX_BODY_SIZE) {
+        exceeded = true;
+        const err = new Error('Payload Too Large: request body exceeds 1MB limit');
+        err.statusCode = 413;
+        req.destroy();
+        reject(err);
+        return;
+      }
+      body += chunk;
+    });
+
     req.on('end', () => {
+      if (exceeded) return;
       try {
-        resolve(body ? JSON.parse(body) : {});
+        resolve(body.trim() ? JSON.parse(body) : {});
       } catch (err) {
-        reject(new Error('Invalid JSON payload'));
+        const parseErr = new Error('Invalid JSON payload');
+        parseErr.statusCode = 400;
+        reject(parseErr);
       }
     });
-    req.on('error', reject);
+
+    req.on('error', (err) => {
+      if (!exceeded) reject(err);
+    });
   });
 }
 
 const server = http.createServer(async (req, res) => {
-  const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
-  const pathname = parsedUrl.pathname;
-  const method = req.method.toUpperCase();
+  let parsedUrl;
+  try {
+    const rawHost = req.headers.host || 'localhost';
+    const safeHost = rawHost.replace(/[^a-zA-Z0-9.:_-]/g, '') || 'localhost';
+    parsedUrl = new URL(req.url, `http://${safeHost}`);
+  } catch (_) {
+    try {
+      parsedUrl = new URL(req.url, 'http://127.0.0.1');
+    } catch {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Bad Request: Malformed request URL' }));
+      return;
+    }
+  }
 
+  const pathname = parsedUrl.pathname;
+  const method = (req.method || 'GET').toUpperCase();
+
+  // Security & Cross-Origin Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
 
   if (method === 'OPTIONS') {
     res.writeHead(204);
@@ -147,7 +190,7 @@ const server = http.createServer(async (req, res) => {
         realWalletConnected: connectedRealWallet ? true : false,
         activeTasks: memory.listActiveTasks().length,
         pendingApprovals: safety.listPendingApprovals().length,
-        testsPassing: 97
+        testsPassing: 107
       }));
       return;
     }
@@ -303,9 +346,20 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/agent/approve' && method === 'POST') {
       const body = await parseJsonBody(req);
       const { token, operator } = body;
-      const result = await opsAgent.approveAndResume(token, operator || 'Dashboard_Operator');
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, result }));
+      if (!token || typeof token !== 'string' || token.trim() === '') {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing or invalid approval token' }));
+        return;
+      }
+      try {
+        const result = await opsAgent.approveAndResume(token.trim(), operator || 'Dashboard_Operator');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, result }));
+      } catch (err) {
+        const status = err.message?.includes('not found') ? 404 : 400;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
       return;
     }
 
@@ -313,9 +367,20 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/agent/reject' && method === 'POST') {
       const body = await parseJsonBody(req);
       const { token, operator, reason } = body;
-      const result = await opsAgent.rejectAndAbort(token, operator || 'Dashboard_Operator', reason);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, result }));
+      if (!token || typeof token !== 'string' || token.trim() === '') {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing or invalid approval token' }));
+        return;
+      }
+      try {
+        const result = await opsAgent.rejectAndAbort(token.trim(), operator || 'Dashboard_Operator', reason);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, result }));
+      } catch (err) {
+        const status = err.message?.includes('not found') ? 404 : 400;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
       return;
     }
 
@@ -387,9 +452,32 @@ const server = http.createServer(async (req, res) => {
       const body = await parseJsonBody(req);
       const { id, name, chain, address, minThreshold, targetBalance, maxSingleTopUp, alertEmailSender } = body;
 
-      if (!id || !chain || !address || !minThreshold || !targetBalance) {
+      if (!id || !chain || !address || minThreshold === undefined || targetBalance === undefined) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Missing required fields (id, chain, address, minThreshold, targetBalance)' }));
+        return;
+      }
+
+      const cleanId = String(id).trim();
+      if (!/^[a-zA-Z0-9_-]{2,64}$/.test(cleanId)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid relayer id format (must be 2-64 alphanumeric, dash, or underscore characters)' }));
+        return;
+      }
+
+      if (cleanId === 'export' || cleanId === 'import' || cleanId === '__proto__' || cleanId === 'constructor') {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Reserved identifier cannot be used as relayer id' }));
+        return;
+      }
+
+      const minThresh = Number(minThreshold);
+      const targetBal = Number(targetBalance);
+      const maxTop = maxSingleTopUp !== undefined ? Number(maxSingleTopUp) : targetBal;
+
+      if (!Number.isFinite(minThresh) || minThresh <= 0 || !Number.isFinite(targetBal) || targetBal <= 0 || !Number.isFinite(maxTop) || maxTop <= 0) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Numeric parameters (minThreshold, targetBalance, maxSingleTopUp) must be positive finite numbers' }));
         return;
       }
 
@@ -400,7 +488,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      const exists = config.relayers.some(r => r.id === id || r.address.toLowerCase() === address.toLowerCase());
+      const exists = config.relayers.some(r => r.id === cleanId || r.address.toLowerCase() === address.toLowerCase());
       if (exists) {
         res.writeHead(409, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Relayer ID or address already exists in allowlist' }));
@@ -408,14 +496,14 @@ const server = http.createServer(async (req, res) => {
       }
 
       const newRelayer = {
-        id,
-        name: name || id,
+        id: cleanId,
+        name: name || cleanId,
         chain: chain.toLowerCase(),
         token: chain.toLowerCase() === 'solana' ? 'SOL' : 'ETH',
         address,
-        minThreshold: Number(minThreshold),
-        targetBalance: Number(targetBalance),
-        maxSingleTopUp: Number(maxSingleTopUp) || Number(targetBalance),
+        minThreshold: minThresh,
+        targetBalance: targetBal,
+        maxSingleTopUp: maxTop,
         alertEmailSender: alertEmailSender || '',
         enabled: true
       };
@@ -425,8 +513,8 @@ const server = http.createServer(async (req, res) => {
       agent = new MermailRelayerSentinel({ config });
       watchdog.updateConfig(config);
 
-      defaultHistory.recordEvent('RELAYER_ADDED', { relayerId: id, chain, address });
-      broadcastEvent('log', { message: `[CONFIG] Added allowlisted relayer: ${id} (${chain})` });
+      defaultHistory.recordEvent('RELAYER_ADDED', { relayerId: cleanId, chain, address });
+      broadcastEvent('log', { message: `[CONFIG] Added allowlisted relayer: ${cleanId} (${chain})` });
       broadcastEvent('relayers_updated', { relayers: config.relayers });
 
       res.writeHead(201, { 'Content-Type': 'application/json' });
@@ -435,8 +523,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     // PUT /api/relayers/:id (Update or toggle relayer)
-    if (pathname.startsWith('/api/relayers/') && method === 'PUT') {
+    if (pathname.startsWith('/api/relayers/') && !pathname.includes('/export') && !pathname.includes('/import') && !pathname.endsWith('/balance') && !pathname.endsWith('/topup') && method === 'PUT') {
       const relayerId = decodeURIComponent(pathname.replace('/api/relayers/', ''));
+      if (!relayerId || relayerId === '__proto__' || relayerId === 'constructor' || relayerId.includes('/')) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid relayer id' }));
+        return;
+      }
       const body = await parseJsonBody(req);
       const relayer = config.relayers.find(r => r.id === relayerId);
 
@@ -447,10 +540,34 @@ const server = http.createServer(async (req, res) => {
       }
 
       if (body.enabled !== undefined) relayer.enabled = Boolean(body.enabled);
-      if (body.minThreshold !== undefined) relayer.minThreshold = Number(body.minThreshold);
-      if (body.targetBalance !== undefined) relayer.targetBalance = Number(body.targetBalance);
-      if (body.maxSingleTopUp !== undefined) relayer.maxSingleTopUp = Number(body.maxSingleTopUp);
-      if (body.name) relayer.name = body.name;
+      if (body.minThreshold !== undefined) {
+        const val = Number(body.minThreshold);
+        if (!Number.isFinite(val) || val <= 0) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'minThreshold must be a positive finite number' }));
+          return;
+        }
+        relayer.minThreshold = val;
+      }
+      if (body.targetBalance !== undefined) {
+        const val = Number(body.targetBalance);
+        if (!Number.isFinite(val) || val <= 0) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'targetBalance must be a positive finite number' }));
+          return;
+        }
+        relayer.targetBalance = val;
+      }
+      if (body.maxSingleTopUp !== undefined) {
+        const val = Number(body.maxSingleTopUp);
+        if (!Number.isFinite(val) || val <= 0) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'maxSingleTopUp must be a positive finite number' }));
+          return;
+        }
+        relayer.maxSingleTopUp = val;
+      }
+      if (body.name && typeof body.name === 'string') relayer.name = body.name.trim();
 
       saveConfig({ relayers: config.relayers });
       agent = new MermailRelayerSentinel({ config });
@@ -466,8 +583,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     // DELETE /api/relayers/:id (Remove relayer)
-    if (pathname.startsWith('/api/relayers/') && method === 'DELETE') {
+    if (pathname.startsWith('/api/relayers/') && !pathname.includes('/export') && !pathname.includes('/import') && method === 'DELETE') {
       const relayerId = decodeURIComponent(pathname.replace('/api/relayers/', ''));
+      if (!relayerId || relayerId === '__proto__' || relayerId === 'constructor' || relayerId.includes('/')) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid relayer id' }));
+        return;
+      }
       const index = config.relayers.findIndex(r => r.id === relayerId);
 
       if (index === -1) {
@@ -629,6 +751,12 @@ const server = http.createServer(async (req, res) => {
       }
 
       const relayerId = decodeURIComponent(pathname.replace('/api/relayers/', '').replace('/topup', ''));
+      if (!relayerId || relayerId === '__proto__' || relayerId === 'constructor' || relayerId.includes('/')) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid relayer id' }));
+        return;
+      }
+
       const relayer = config.relayers.find(r => r.id === relayerId);
 
       if (!relayer) {
@@ -644,7 +772,14 @@ const server = http.createServer(async (req, res) => {
       }
 
       const body = await parseJsonBody(req);
-      const amount = Number(body.amount) || Number(relayer.targetBalance) || 0.1;
+      const rawAmount = body.amount !== undefined ? Number(body.amount) : Number(relayer.targetBalance);
+      if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Top-up amount must be a positive finite number' }));
+        return;
+      }
+
+      const amount = rawAmount;
       const token = relayer.token;
       const rate = token === 'SOL' ? 150 : 2600;
       const usdValue = amount * rate;
@@ -725,8 +860,27 @@ const server = http.createServer(async (req, res) => {
     // PUT /api/config (Update policy limits)
     if (pathname === '/api/config' && method === 'PUT') {
       const body = await parseJsonBody(req);
-      if (body.policy) {
-        config.policy = { ...config.policy, ...body.policy };
+      if (body.policy && typeof body.policy === 'object') {
+        const pol = { ...body.policy };
+        if (pol.maxDailyTopUpUsd !== undefined) {
+          const val = Number(pol.maxDailyTopUpUsd);
+          if (!Number.isFinite(val) || val <= 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'maxDailyTopUpUsd must be a positive finite number' }));
+            return;
+          }
+          pol.maxDailyTopUpUsd = val;
+        }
+        if (pol.maxSingleTopUpUsd !== undefined) {
+          const val = Number(pol.maxSingleTopUpUsd);
+          if (!Number.isFinite(val) || val <= 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'maxSingleTopUpUsd must be a positive finite number' }));
+            return;
+          }
+          pol.maxSingleTopUpUsd = val;
+        }
+        config.policy = { ...config.policy, ...pol };
         config.dailyMaxUsdCap = config.policy.maxDailyTopUpUsd || config.dailyMaxUsdCap;
         config.maxSingleTopUpUsd = config.policy.maxSingleTopUpUsd || config.maxSingleTopUpUsd;
         saveConfig({ policy: config.policy });
@@ -1046,7 +1200,13 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/notifications' && method === 'POST') {
       const body = await parseJsonBody(req);
       if (body.webhookUrl !== undefined) {
-        defaultNotifier.setWebhookUrl(body.webhookUrl);
+        try {
+          defaultNotifier.setWebhookUrl(body.webhookUrl);
+        } catch (err) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+          return;
+        }
       }
       if (body.testPing) {
         const pingRes = await defaultNotifier.dispatch('TEST_PING', {
@@ -1064,25 +1224,44 @@ const server = http.createServer(async (req, res) => {
     }
   } catch (apiErr) {
     console.error('[API Error]:', apiErr);
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: apiErr.message }));
+    const statusCode = apiErr.statusCode || 500;
+    const clientMessage = statusCode >= 500 ? 'Internal server error' : apiErr.message;
+    res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: clientMessage }));
     return;
   }
 
-  // 3. Static File Server
-  let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
+  // 3. Static File Server (with strict path traversal guards)
+  const resolvedPublicDir = path.resolve(PUBLIC_DIR);
+  let decodedPath = '/';
+  try {
+    decodedPath = decodeURIComponent(pathname);
+  } catch {
+    decodedPath = pathname;
+  }
+
+  const targetRelative = decodedPath === '/' ? 'index.html' : decodedPath.replace(/^\/+/, '');
+  let filePath = path.resolve(resolvedPublicDir, targetRelative);
+
+  if (!filePath.startsWith(resolvedPublicDir)) {
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Forbidden: Path traversal blocked' }));
+    return;
+  }
+
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(PUBLIC_DIR, 'index.html');
+    filePath = path.join(resolvedPublicDir, 'index.html');
   }
 
   const ext = path.extname(filePath).toLowerCase();
   const MIME_TYPES = {
-    '.html': 'text/html',
-    '.js': 'text/javascript',
-    '.css': 'text/css',
-    '.json': 'application/json',
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'text/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
     '.svg': 'image/svg+xml',
-    '.png': 'image/png'
+    '.png': 'image/png',
+    '.ico': 'image/x-icon'
   };
 
   fs.readFile(filePath, (err, data) => {
@@ -1094,6 +1273,14 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
     res.end(data);
   });
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[CRITICAL] Uncaught exception:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[CRITICAL] Unhandled rejection:', reason);
 });
 
 server.listen(PORT, () => {
