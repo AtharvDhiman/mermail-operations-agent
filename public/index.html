@@ -1867,31 +1867,32 @@
           <polyline points="2 17 12 22 22 17"></polyline>
           <polyline points="2 12 12 17 22 12"></polyline>
         </svg>
+      </div>
       <div class="brand-title-wrap">
         <span class="brand-title" style="font-family: var(--font-dapp); letter-spacing: -0.5px;">
-          MERMAIL AGENT SKILL
+          MERMAIL DAPP
           <span class="brand-badge">v2.0</span>
         </span>
       </div>
     </a>
 
-    <!-- Live Operational Engine Ticker -->
+    <!-- Live Multi-Chain Network Ticker -->
     <div class="dapp-ticker-bar">
       <div class="dapp-chain-pill">
         <span class="dapp-chain-dot"></span>
-        <span>Mermail MCP</span>
+        <span>Solana</span>
       </div>
       <div class="dapp-ticker-item">
-        <span>Mailbox:</span>
-        <span class="dapp-ticker-val">mbx_ops_01</span>
+        <span>TPS:</span>
+        <span class="dapp-ticker-val" id="dapp-tps-val">3,420</span>
       </div>
       <div class="dapp-ticker-item">
-        <span>FSM:</span>
-        <span class="dapp-ticker-val" style="color: var(--accent-emerald);">Deterministic</span>
+        <span>Base:</span>
+        <span class="dapp-ticker-val">&lt;0.01 Gwei</span>
       </div>
       <div class="dapp-ticker-item">
-        <span>Tests:</span>
-        <span class="dapp-ticker-val" id="dapp-rpc-val" style="color: var(--accent-emerald);">97/97 PASS</span>
+        <span>RPC:</span>
+        <span class="dapp-ticker-val" id="dapp-rpc-val" style="color: var(--accent-emerald);">34ms</span>
       </div>
     </div>
 
@@ -1908,20 +1909,15 @@
     </nav>
 
     <div class="nav-actions">
-      <div class="btn-live-pulse radar-pulse-wrap" title="Engine status: Verified with 97/97 tests passing across 42 suites">
+      <div class="btn-live-pulse radar-pulse-wrap" title="Engine status: Verified with 67/67 tests passing">
         <span class="radar-ring"></span>
         <span class="pulse-dot"></span>
-        <span>AGENT SKILL ACTIVE</span>
+        <span>PROTOCOL LIVE</span>
       </div>
-
-      <a href="https://github.com/AtharvDhiman/mermail-operations-agent" target="_blank" rel="noopener noreferrer" class="btn-wallet btn-magnetic" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;" title="View Source on GitHub">
-        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-        <span>GitHub</span>
-      </a>
 
       <button class="btn-wallet btn-magnetic" id="btn-connect-wallet" onclick="openWalletModal()">
         <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="16" y1="12" x2="16.01" y2="12"></line></svg>
-        <span id="wallet-btn-label">Connect Real Wallet</span>
+        <span id="wallet-btn-label">Connect Web3 Wallet</span>
       </button>
 
       <button class="btn-nav-primary btn-magnetic" onclick="triggerSystemDemo()">
@@ -1936,65 +1932,60 @@
     </div>
   </header>
 
-  <!-- Hero Section (Mermail Agent Skill Core) -->
+  <!-- Hero Section (DApp Protocol Portal) -->
   <section class="hero-section" id="hero">
     <div class="dapp-hero-badge bounty-pill">
       <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
-      Superteam Earn Bounty &bull; Official Mermail Agent Skill ($500 USDC)
+      Superteam Hackathon Bounty &bull; Mermail Autonomous Operations DApp ($500 USDC)
     </div>
 
     <h1 class="hero-title" style="font-family: var(--font-dapp); letter-spacing: -0.6px;">
-      Mermail Autonomous Operations Agent<br>
-      <span class="gold-gradient">Turn Inbound Emails into Verified Multi-Step Workflows</span>
+      Autonomous Operations DApp for <br>
+      <span class="gold-gradient">Solana, Base & PayBox Treasury</span>
     </h1>
 
     <p class="hero-subtitle">
-      The intelligent operational workforce powered by the official Mermail MCP. It ingests communications through your agent's authenticated Mermail inbox, reconstructs thread commitments, plans verified DAG workflows, pauses at cryptographic dual-control safety gates (APPR-XXXX), executes actions with official Mermail tools, and manages persistent multi-day follow-up cadences that auto-cancel on reply.
+      The decentralized operational backbone for Web3 infrastructure. Powered by Mermail MCP: deterministic inbox triage, multi-step DAG planning, cryptographic dual-control approval gates, and automated on-chain gas replenishment across Solana and Base.
     </p>
-
-    <!-- Visual Architecture Flow Indicator -->
-    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 16px 0 24px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);">
-      <span style="background: rgba(245, 158, 11, 0.12); color: var(--accent-gold); border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 10px; border-radius: 6px; font-weight: 600;">1. MERMAIL INBOX</span>
-      <span style="color: var(--text-tertiary);">&rarr;</span>
-      <span style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); padding: 4px 10px; border-radius: 6px;">2. INTENT TRIAGE</span>
-      <span style="color: var(--text-tertiary);">&rarr;</span>
-      <span style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); padding: 4px 10px; border-radius: 6px;">3. DAG PLANNER</span>
-      <span style="color: var(--text-tertiary);">&rarr;</span>
-      <span style="background: rgba(244, 63, 94, 0.12); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3); padding: 4px 10px; border-radius: 6px; font-weight: 600;">4. DUAL-CONTROL GATE</span>
-      <span style="color: var(--text-tertiary);">&rarr;</span>
-      <span style="background: rgba(16, 185, 129, 0.12); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 10px; border-radius: 6px; font-weight: 600;">5. MERMAIL MCP EXEC</span>
-      <span style="color: var(--text-tertiary);">&rarr;</span>
-      <span style="background: rgba(56, 189, 248, 0.12); color: var(--accent-blue); border: 1px solid rgba(56, 189, 248, 0.3); padding: 4px 10px; border-radius: 6px; font-weight: 600;">6. FOLLOW-UP CADENCE</span>
-      <span style="color: var(--text-tertiary);">&rarr;</span>
-      <span style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); padding: 4px 10px; border-radius: 6px;">7. AUDIT TRAIL</span>
-    </div>
 
     <div class="hero-cta-group">
       <button class="btn-hero-main btn-magnetic" onclick="scrollToSection('workbench')">
         <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-        Launch Agent Workbench
+        Launch DApp Workbench
       </button>
-      <button class="btn-nav-primary btn-magnetic" style="padding: 12px 24px; font-size: 13px;" onclick="triggerSystemDemo()">
-        <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-        Run 60s Judge Demo
+      <button class="btn-hero-secondary btn-magnetic" onclick="scrollToSection('console')">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        Inspect Relayer Vaults
       </button>
-      <a href="https://github.com/AtharvDhiman/mermail-operations-agent" target="_blank" rel="noopener noreferrer" class="btn-hero-secondary btn-magnetic" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-        <svg class="icon" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-        GitHub Repository &rarr;
-      </a>
+      <button class="btn-wallet btn-magnetic" style="padding: 12px 24px; font-size: 13px;" onclick="openWalletModal()">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+        Connect Real Wallet
+      </button>
     </div>
 
-    <!-- Live Agent Protocol HUD Strip -->
+    <!-- Live DApp Protocol HUD Strip -->
     <div class="stats-strip">
       <div class="stat-card tilt-card">
         <div class="stat-card-header">
-          <span class="stat-card-title">Mermail Inbox MCP</span>
-          <svg class="icon stat-card-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          <span class="stat-card-title">Fleet Liquidity [SIMULATED]</span>
+          <svg class="icon stat-card-icon" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
         </div>
-        <div class="stat-card-val" style="color: var(--accent-gold);">ACTIVE</div>
-        <div class="stat-card-sub">Mailbox: mbx_ops_sentinel_01 &bull; save_draft &amp; reply</div>
+        <div class="stat-card-val" id="dapp-hud-tvl">353.64 SOL</div>
+        <div class="stat-card-sub">Simulated Demo Fleet (Connect Real Wallet for Live RPC)</div>
         <div class="dapp-fuel-wrap">
-          <div class="dapp-fuel-fill" style="width: 100%; background: var(--accent-gold);"></div>
+          <div class="dapp-fuel-fill" style="width: 88%;"></div>
+        </div>
+      </div>
+
+      <div class="stat-card tilt-card">
+        <div class="stat-card-header">
+          <span class="stat-card-title">PayBox Treasury</span>
+          <svg class="icon stat-card-icon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="16" y1="12" x2="16.01" y2="12"></line></svg>
+        </div>
+        <div class="stat-card-val" style="color: var(--accent-emerald);">CIRCUIT ACTIVE</div>
+        <div class="stat-card-sub">Autonomous HTTP 402 Settlement Gateway</div>
+        <div class="dapp-fuel-wrap">
+          <div class="dapp-fuel-fill" style="width: 100%; background: var(--accent-emerald);"></div>
         </div>
       </div>
 
@@ -2003,22 +1994,10 @@
           <span class="stat-card-title">Dual-Control Safety</span>
           <svg class="icon stat-card-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
         </div>
-        <div class="stat-card-val" style="color: var(--accent-blue);">100% INVARIANTS</div>
-        <div class="stat-card-sub">Cryptographic APPR-* Tokens &bull; Zero Blind Sends</div>
+        <div class="stat-card-val">100% INVARIANTS</div>
+        <div class="stat-card-sub">Cryptographic APPR-* Tokens &bull; Zero Blind Signs</div>
         <div class="dapp-fuel-wrap">
           <div class="dapp-fuel-fill" style="width: 100%; background: linear-gradient(90deg, #38bdf8, #a855f7);"></div>
-        </div>
-      </div>
-
-      <div class="stat-card tilt-card">
-        <div class="stat-card-header">
-          <span class="stat-card-title">Follow-Up Intelligence</span>
-          <svg class="icon stat-card-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-        </div>
-        <div class="stat-card-val" style="color: var(--accent-purple);">ACTIVE CADENCE</div>
-        <div class="stat-card-sub">Day 0/3/7 Cadence &bull; Auto-Cancel on Inbound Reply</div>
-        <div class="dapp-fuel-wrap">
-          <div class="dapp-fuel-fill" style="width: 100%; background: var(--accent-purple);"></div>
         </div>
       </div>
 
@@ -2027,8 +2006,8 @@
           <span class="stat-card-title">Verified Test Suites</span>
           <svg class="icon stat-card-icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
         </div>
-        <div class="stat-card-val" style="color: var(--accent-emerald);">97 / 97 PASS</div>
-        <div class="stat-card-sub">42 Test Suites &bull; 100% Mermail Skill Compliant</div>
+        <div class="stat-card-val">67 / 67 PASS</div>
+        <div class="stat-card-sub">26 Unit & Integration Suites &bull; Mermail Compliant</div>
         <div class="dapp-fuel-wrap">
           <div class="dapp-fuel-fill" style="width: 100%; background: #10b981;"></div>
         </div>
@@ -2246,9 +2225,9 @@
   <section class="section-container" id="lifecycle">
     <div class="section-header-box">
       <span class="section-eyebrow">VERIFIED PROTOCOL STATE MACHINE</span>
-      <h2 class="section-title">Verified Agent Execution Lifecycle</h2>
+      <h2 class="section-title">The 7-Step Autonomous DApp Lifecycle</h2>
       <p class="section-desc">
-        Engineered for deterministic execution and complete operational transparency. Every inbound message traverses a strict, verified state machine before any external action or on-chain transfer occurs.
+        Engineered for absolute reliability in decentralized production environments. Every inbound message traverses a strict, verified state machine before any external action or on-chain transfer occurs.
       </p>
     </div>
 
@@ -2321,8 +2300,8 @@
   <!-- 4 Specialized Operational Modes -->
   <section class="section-container" id="modes">
     <div class="section-header-box">
-      <span class="section-eyebrow">OPERATIONAL CAPABILITIES</span>
-      <h2 class="section-title">Four Production-Oriented Agent Modes</h2>
+      <span class="section-eyebrow">MULTI-CHAIN CAPABILITIES</span>
+      <h2 class="section-title">Four Production-Grade DApp Agent Modes</h2>
       <p class="section-desc">
         A single unified agent capable of dynamically switching execution strategies based on parsed intent, sender profile, and risk level.
       </p>
@@ -2419,13 +2398,13 @@
     </div>
   </section>
 
-  <!-- Live Operations Console Section (Specialized Mode 4: Web3 Vaults) -->
+  <!-- Live Operations Console Section (DApp Relayer Vaults) -->
   <section class="section-container" id="console">
     <div class="section-header-box">
-      <span class="section-eyebrow">SPECIALIZED OPERATIONAL MODE 4</span>
-      <h2 class="section-title">Web3 Relayer Vaults &amp; PayBox Settlement [SIMULATION]</h2>
+      <span class="section-eyebrow">ON-CHAIN LIQUIDITY & FLEET PROTOCOL</span>
+      <h2 class="section-title">Multi-Chain Relayer Vaults & PayBox Settlement</h2>
       <p class="section-desc">
-        When operating in General Ops mode, the agent monitors infrastructure gas across Solana and Base. Demonstrated below using simulated treasury balances with optional live on-chain RPC telemetry when connected.
+        Autonomous liquidity monitoring across Solana Mainnet and Base L2. When gas balances drop below safety thresholds, the Mermail agent verifies cryptographic allowlists and executes dual-control PayBox replenishment.
       </p>
     </div>
 
@@ -2434,38 +2413,38 @@
       <div class="telemetry-strip">
         <div class="telemetry-item">
           <span class="tele-label">
-            <span class="tele-dot" id="dot-sol" style="background: var(--text-tertiary);"></span>
+            <span class="tele-dot online" id="dot-sol"></span>
             Solana Mainnet RPC
           </span>
-          <span class="tele-val" id="sol-balance-val">Not connected</span>
-          <span class="tele-sub" id="sol-latency-val">RPC Status: Idle</span>
+          <span class="tele-val" id="sol-balance-val">-- SOL</span>
+          <span class="tele-sub" id="sol-latency-val">Latency: -- ms</span>
         </div>
 
         <div class="telemetry-item">
           <span class="tele-label">
-            <span class="tele-dot" id="dot-base" style="background: var(--text-tertiary);"></span>
-            Base Mainnet RPC
+            <span class="tele-dot online" id="dot-base"></span>
+            Base Sepolia / Mainnet RPC
           </span>
-          <span class="tele-val" id="base-balance-val">Not connected</span>
-          <span class="tele-sub" id="base-latency-val">RPC Status: Idle</span>
+          <span class="tele-val" id="base-balance-val">-- ETH</span>
+          <span class="tele-sub" id="base-latency-val">Latency: -- ms</span>
         </div>
 
         <div class="telemetry-item">
           <span class="tele-label">
             <span class="tele-dot online"></span>
-            Demo Environment
+            PayBox Treasury
           </span>
-          <span class="tele-val" id="demo-env-val">ACTIVE</span>
-          <span class="tele-sub" id="paybox-sub-val">Simulated Vaults: Active</span>
+          <span class="tele-val" id="paybox-balance-val">$1,250.00</span>
+          <span class="tele-sub" id="paybox-sub-val">Daily Cap: $500.00</span>
         </div>
 
         <div class="telemetry-item">
           <span class="tele-label">
             <span class="tele-dot online" id="dot-watchdog"></span>
-            Mermail Agent Engine
+            Watchdog Status
           </span>
-          <span class="tele-val" id="watchdog-status-val">READY</span>
-          <span class="tele-sub" id="watchdog-sub-val">97 Tests Passing (42 Suites)</span>
+          <span class="tele-val" id="watchdog-status-val">ACTIVE</span>
+          <span class="tele-sub" id="watchdog-sub-val">Cycle interval: 30s</span>
         </div>
       </div>
 
@@ -2798,10 +2777,10 @@
     <div class="quickstart-box">
       <div class="cli-snippet-wrap">
         <div class="comment"># 1. Clone & install dependencies</div>
-        <div>git clone https://github.com/AtharvDhiman/mermail-operations-agent.git</div>
-        <div>cd mermail-operations-agent &amp;&amp; npm install</div>
+        <div>git clone https://github.com/mermail-skills/autonomous-operations-agent</div>
+        <div>cd autonomous-operations-agent &amp;&amp; npm install</div>
         <br>
-        <div class="comment"># 2. Run the 97-test suite (42 suites)</div>
+        <div class="comment"># 2. Run the 67-test suite (26 suites)</div>
         <div class="cmd">npm test</div>
         <br>
         <div class="comment"># 3. Validate Mermail skill standards</div>
@@ -2820,7 +2799,7 @@
           &bull; <strong>Dual-Control Security:</strong> Cryptographic human approval tokens for all high-risk actions.
         </div>
         <div style="display: flex; gap: 10px; margin-top: 6px;">
-          <a href="https://github.com/AtharvDhiman/mermail-operations-agent" target="_blank" rel="noopener noreferrer" class="btn-hero-secondary" style="padding: 8px 16px; font-size: 12px;">
+          <a href="https://github.com" target="_blank" class="btn-hero-secondary" style="padding: 8px 16px; font-size: 12px;">
             GitHub Repository &rarr;
           </a>
           <button class="btn-nav-primary" style="padding: 8px 16px; font-size: 12px;" onclick="triggerSystemDemo()">
@@ -2838,7 +2817,6 @@
     </div>
     <div style="display: flex; gap: 16px;">
       <a href="#hero" style="color: var(--text-tertiary); text-decoration: none;">Back to top &uarr;</a>
-      <a href="https://github.com/AtharvDhiman/mermail-operations-agent" target="_blank" rel="noopener noreferrer" style="color: var(--accent-gold); text-decoration: none;">GitHub Repository &rarr;</a>
       <a href="https://mermail.app" target="_blank" style="color: var(--text-tertiary); text-decoration: none;">Mermail Docs</a>
       <a href="https://superteam.fun" target="_blank" style="color: var(--text-tertiary); text-decoration: none;">Superteam Earn</a>
     </div>
@@ -3837,15 +3815,13 @@
         if (solRes.ok) {
           const d = await solRes.json();
           if (d.success) {
-            const txt = `${d.balance.toFixed(2)} SOL (Live RPC)`;
+            const txt = `${d.balance.toFixed(2)} SOL`;
             const el1 = document.getElementById('sol-balance-val');
             if (el1) el1.innerText = txt;
             const el2 = document.getElementById('vault-card-sol-bal');
             if (el2) el2.innerText = txt;
             const elLat = document.getElementById('sol-latency-val');
-            if (elLat) elLat.innerText = d.slot ? `Solana Mainnet: Slot #${d.slot}` : `Solana Mainnet: Connected`;
-            const dotSol = document.getElementById('dot-sol');
-            if (dotSol) dotSol.style.background = 'var(--accent-emerald)';
+            if (elLat) elLat.innerText = d.slot ? `Slot #${d.slot}` : `Verified On-Chain`;
           }
         }
       } catch (_) {}
@@ -3855,15 +3831,13 @@
         if (baseRes.ok) {
           const d = await baseRes.json();
           if (d.success) {
-            const txt = `${d.balance.toFixed(4)} ETH (Live RPC)`;
+            const txt = `${d.balance.toFixed(4)} ETH`;
             const el1 = document.getElementById('base-balance-val');
             if (el1) el1.innerText = txt;
             const el2 = document.getElementById('vault-card-base-bal');
             if (el2) el2.innerText = txt;
             const elLat = document.getElementById('base-latency-val');
-            if (elLat) elLat.innerText = `Base Mainnet: Connected`;
-            const dotBase = document.getElementById('dot-base');
-            if (dotBase) dotBase.style.background = 'var(--accent-emerald)';
+            if (elLat) elLat.innerText = `Base Sepolia/Mainnet`;
           }
         }
       } catch (_) {}
