@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mermail Autonomous Operations Agent — Superteam Bounty Submission</title>
+  <title>Mermail Agent Skill + Web3 Operations Control Center — Superteam Bounty</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -101,7 +101,7 @@
     .icon-xl { width: 28px; height: 28px; }
 
     /* Clean Section Anchor Scroll Spacing */
-    section, .section-container, #quickstart, #workbench, #lifecycle, #modes, #console, #hero {
+    section, .section-container, #quickstart, #workbench, #lifecycle, #modes, #console, #hero, #architecture {
       scroll-margin-top: 80px;
     }
 
@@ -2425,6 +2425,238 @@
         display: none !important;
       }
     }
+  
+    /* Core Architecture Pipeline */
+    .arch-pipeline-container {
+      margin-top: 24px;
+      position: relative;
+    }
+    .arch-flow-diagram {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 12px;
+      position: relative;
+    }
+    @media (max-width: 1100px) {
+      .arch-flow-diagram {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+    }
+    .arch-step-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-medium);
+      border-radius: 12px;
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      transition: all 0.25s ease;
+    }
+    .arch-step-box:hover {
+      border-color: var(--accent-gold);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.12);
+    }
+    .arch-step-box.active-core {
+      border-color: rgba(245, 158, 11, 0.6);
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 17, 24, 0.95) 100%);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+    }
+    .arch-step-box.highlight-gate {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.06) 0%, rgba(15, 17, 24, 0.95) 100%);
+    }
+    .arch-step-tag {
+      font-size: 9px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      color: var(--accent-gold);
+      text-transform: uppercase;
+    }
+    .arch-step-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+    .arch-step-title {
+      font-family: var(--font-dapp);
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.2px;
+    }
+    .arch-step-detail {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Modes Shared Core Banner */
+    .modes-shared-core-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(15, 17, 24, 0.85);
+      border: 1px solid var(--border-medium);
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .modes-core-node {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 220px;
+    }
+    .core-node-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: var(--accent-gold);
+      color: #08090d;
+      font-weight: 800;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .core-node-label {
+      font-family: var(--font-dapp);
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .core-node-sub {
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+    .modes-core-connector {
+      color: var(--accent-gold);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    /* Relayer Simulation Disclaimer Banner */
+    .env-disclaimer-banner {
+      background: rgba(245, 158, 11, 0.06);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #fbbf24;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .badge-sim {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    /* Skill Specification View in Console */
+    .skill-spec-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .skill-spec-header-card {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 17, 24, 0.95) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 12px;
+      padding: 18px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .skill-spec-raw-box {
+      background: #06070a;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      max-height: 480px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Enhanced DAG Step Item */
+    .dag-step-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: #0c0e14;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .dag-step-item:hover {
+      border-color: rgba(245, 158, 11, 0.3);
+      background: rgba(16, 20, 30, 0.95);
+    }
+    .dag-step-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .dag-step-meta-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 6px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      background: rgba(0, 0, 0, 0.35);
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .dag-meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .dag-meta-label {
+      color: var(--text-tertiary);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .dag-meta-val {
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
   </style>
 </head>
 <body>
@@ -2482,10 +2714,10 @@
     </nav>
 
     <div class="nav-actions">
-      <div class="btn-live-pulse radar-pulse-wrap" title="Engine status: Verified with 107/107 tests passing">
+      <div class="btn-live-pulse radar-pulse-wrap" title="Engine status: Verified with 123/123 tests passing">
         <span class="radar-ring"></span>
         <span class="pulse-dot"></span>
-        <span>PROTOCOL LIVE</span>
+        <span>PROTOCOL LIVE (123 TESTS)</span>
       </div>
 
       <button class="btn-wallet btn-magnetic" id="btn-connect-wallet" onclick="openWalletModal()">
@@ -2558,7 +2790,7 @@
       <div class="mobile-nav-footer">
         <div class="mobile-status-pill">
           <span class="pulse-dot"></span>
-          <span>PROTOCOL ENGINE LIVE (107/107 PASS)</span>
+          <span>PROTOCOL ENGINE LIVE (123/123 PASS)</span>
         </div>
       </div>
     </div>
@@ -3953,6 +4185,33 @@
     }
 
     // Switch Console Tab
+    
+    async function loadSkillSpec() {
+      const container = document.getElementById('skill-raw-content');
+      if (!container) return;
+      try {
+        const res = await fetch('/api/skill');
+        const data = await res.json();
+        if (data.success && data.content) {
+          container.innerText = data.content;
+        }
+      } catch (err) {
+        container.innerText = '// Error loading live SKILL.md: ' + err.message;
+      }
+    }
+
+    function copySkillSpec() {
+      const container = document.getElementById('skill-raw-content');
+      if (container) {
+        navigator.clipboard.writeText(container.innerText);
+        const btn = document.getElementById('btn-copy-skill');
+        if (btn) {
+          btn.innerText = 'Copied!';
+          setTimeout(() => { btn.innerText = 'Copy SKILL.md'; }, 2000);
+        }
+      }
+    }
+
     function switchConsoleTab(tabId) {
       document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.c-tab').forEach(el => el.classList.remove('active'));

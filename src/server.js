@@ -423,6 +423,20 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // GET /api/skill
+    if (pathname === '/api/skill' && method === 'GET') {
+      try {
+        const skillPath = path.resolve(__dirname, '../skills/mermail-operations-agent/SKILL.md');
+        const content = fs.readFileSync(skillPath, 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, name: 'mermail-operations-agent', content }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+      return;
+    }
+
     // GET /api/emails
     if (pathname === '/api/emails' && method === 'GET') {
       const emailRes = await agent.client.callTool('list_emails', {
