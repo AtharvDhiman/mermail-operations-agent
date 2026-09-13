@@ -15,7 +15,7 @@ metadata:
 
 ## Overview
 
-`mermail-relayer-sentinel` automates the operational lifecycle of Web3 relayer, paymaster, keeper, and oracle gas replenishment. In Web3 protocols and dApps, backend relayers (such as Solana transaction bundlers, Jupiter execution bots, Chainlink keepers, and ERC-4337 paymasters) send automated threshold alerts when their gas balances drop below safe operating limits. If unaddressed, relayer starvation halts user transactions, liquidation engines, and state updates.
+`mermail-relayer-sentinel` automates the operational lifecycle of Web3 relayer, paymaster, keeper, and oracle gas replenishment. In Web3 protocols and agent networks, backend relayers (such as Solana transaction bundlers, Jupiter execution bots, Chainlink keepers, and ERC-4337 paymasters) send automated threshold alerts when their gas balances drop below safe operating limits. If unaddressed, relayer starvation halts user transactions, liquidation engines, and state updates.
 
 This persona skill monitors the team's dedicated Mermail operations mailbox (`ops@dapp.mermail.app`), ingests infrastructure alerts from verified providers (e.g. Helius, QuickNode, Alchemy, Tenderly), verifies the target address against a cryptographically anchored configuration allowlist, computes the exact gas shortfall, checks multi-chain treasury reserves via PayBox, proposes an authorized token swap or gas transfer with strict human dual-control confirmation, and sends an auditable resolution receipt upon on-chain settlement.
 

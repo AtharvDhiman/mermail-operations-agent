@@ -16,7 +16,7 @@ metadata:
 `mermail-operations-agent` is an autonomous operational workforce for modern teams and Web3 protocols.
 
 **Core Positioning:**
-> *Mermail provides the communication layer. Our Agent Skill turns incoming messages into secure, autonomous, multi-step operational workflows. The DApp provides visibility, approvals, execution controls, Web3 capabilities, and auditability.*
+> *Mermail provides the communication layer. Our Agent Skill turns incoming messages into secure, autonomous, multi-step operational workflows. The Operations Agent provides visibility, approvals, execution controls, Web3 capabilities, and auditability.*
 
 Rather than acting as a brittle auto-responder, this skill executes genuine multi-step agentic behaviors across 4 specialized modes:
 1. **SCHEDULING**: Calendar constraint resolution, candidate slot proposals, timezone normalization, and follow-up tracking.
@@ -43,7 +43,7 @@ Detailed reference guides:
 - **Inbound Mermail Messages**: Raw email payloads containing `subject`, `from`, `to`, `body`, `thread_id`, and cryptographic headers.
 - **Webhook Events**: Event triggers (`incoming_email`, `alert_received`, `approval_updated`) received via the Mermail Streamable HTTP MCP.
 - **System Telemetry**: Low-balance signals from monitored Solana relayer addresses or PayBox liquidity pools.
-- **Operator Approvals**: Signed authorization tokens submitted via the Web3 Control Center DApp or CLI.
+- **Operator Approvals**: Signed authorization tokens submitted via the Web3 Operations Agent Control Center or CLI.
 
 ## Outputs & Deliverables
 
