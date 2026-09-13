@@ -1,0 +1,51 @@
+1
+00:00:00,000 --> 00:00:15,500
+This is the Mermail Operations Agent, live in production. Mermail provides our autonomous agent with an operational communication layer, while our Agent Skill turns incoming decentralized messages into secure, multi-step operations.
+
+2
+00:00:15,700 --> 00:00:32,850
+Traditional email automation is rigid and brittle—blindly triggering actions from simple keywords. Mermail Operations Agent treats inbound communications as untrusted events, orchestrating end-to-end operational workflows with formal safety controls.
+
+3
+00:00:33,050 --> 00:00:46,870
+Mermail gives the agent a dedicated mailbox identity. The Agent Skill continuously ingests incoming messages, checks thread context, and monitors on-chain relayer gas reserves via native RPC.
+
+4
+00:00:47,070 --> 00:01:05,490
+The same underlying architecture powers four specialized operational modes: Automated Meeting Scheduling with calendar constraints, Sales Lead Qualification with ICP scoring, Customer Support ticket triage, and our primary Relayer Sentinel mode for automated Web3 gas monitoring.
+
+5
+00:01:05,690 --> 00:01:22,310
+Let's trigger an autonomous operations scenario. The agent ingests an urgent alert reporting a Solana relayer balance deficit. It classifies the message as a Priority Zero operational incident and autonomously builds a four-step execution DAG.
+
+6
+00:01:22,510 --> 00:01:35,370
+Instead of allowing an LLM to directly execute actions, the skill separates planning, policy validation, execution, and verification into discrete, idempotent steps.
+
+7
+00:01:35,570 --> 00:01:48,140
+Every message is scanned for adversarial prompt injection. Unallowlisted addresses are rejected, and disbursements are bound by a rolling daily budget cap and an instant emergency circuit breaker.
+
+8
+00:01:48,340 --> 00:02:05,160
+Here is the core safety invariant: human dual-control. Before any financial disbursement or external email is dispatched, execution halts at an approval gate. The operator reviews the 128-bit cryptographic token and approves the transfer.
+
+9
+00:02:05,360 --> 00:02:16,490
+Upon operator authorization, the agent resumes execution, settles the transfer through the PayBox gateway, verifies the transaction receipt, and completes the workflow.
+
+10
+00:02:16,690 --> 00:02:27,430
+Every single decision, state transition, and operator intervention is recorded in an append-only audit trail, ensuring complete operational transparency.
+
+11
+00:02:27,630 --> 00:02:38,250
+The core deliverable is a standardized, reusable Mermail Agent Skill defined in SKILL.md—compatible with any agent framework that supports Mermail.
+
+12
+00:02:38,450 --> 00:02:49,840
+Reliability is verified by an automated test suite: 107 unit and security regression tests passing across 42 suites with a 100 percent pass rate.
+
+13
+00:02:50,040 --> 00:03:03,450
+Mermail provides the communication layer. Our Agent Skill turns that communication into secure, auditable, multi-step autonomous operations. Mermail Operations Agent—built for Superteam Earn.

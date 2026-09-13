@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+﻿import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -10,12 +10,12 @@ if (!fs.existsSync(outputDir)) {
 }
 
 async function recordScene(scene, browser) {
-  console.log(\n========================================);
-  console.log(Recording Scene:  ());
-  console.log(Target scene duration: s);
-  console.log(========================================);
+  console.log(`\n========================================`);
+  console.log(`Recording Scene: ${scene.id} (${scene.title})`);
+  console.log(`Target scene duration: ${scene.sceneDuration}s`);
+  console.log(`========================================`);
 
-  const tempDir = path.join(outputDir, 	emp_);
+  const tempDir = path.join(outputDir, `temp_${scene.id}`);
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
   }
@@ -53,7 +53,7 @@ async function recordScene(scene, browser) {
       await smoothMove(600, 600, 960, 650, 20);
     }
     else if (scene.id === 'scene02_problem') {
-      const slideUrl = ile:///;
+      const slideUrl = `file:///${path.resolve('video/slides/scene02_architecture.html').replace(/\\/g, '/')}`;
       await page.goto(slideUrl, { waitUntil: 'networkidle' });
       await page.waitForTimeout(3000);
       await smoothMove(500, 450, 550, 600, 30);
@@ -141,7 +141,7 @@ async function recordScene(scene, browser) {
       await page.waitForTimeout(3500);
       await smoothMove(1000, 500, 1200, 650, 30);
       await page.waitForTimeout(3500);
-      const approveBtn = await page.#btn-gate-approve;
+      const approveBtn = await page.$('#btn-gate-approve');
       if (approveBtn) {
         const box = await approveBtn.boundingBox();
         if (box) {
@@ -178,7 +178,7 @@ async function recordScene(scene, browser) {
       await smoothMove(800, 650, 1200, 650, 25);
     }
     else if (scene.id === 'scene11_skillmd') {
-      const slideUrl = ile:///;
+      const slideUrl = `file:///${path.resolve('video/slides/scene11_skillmd.html').replace(/\\/g, '/')}`;
       await page.goto(slideUrl, { waitUntil: 'networkidle' });
       await page.waitForTimeout(2500);
       await smoothMove(500, 450, 550, 600, 25);
@@ -186,7 +186,7 @@ async function recordScene(scene, browser) {
       await smoothMove(550, 600, 1250, 550, 30);
     }
     else if (scene.id === 'scene12_tests') {
-      const slideUrl = ile:///;
+      const slideUrl = `file:///${path.resolve('video/slides/scene12_tests.html').replace(/\\/g, '/')}`;
       await page.goto(slideUrl, { waitUntil: 'networkidle' });
       await page.waitForTimeout(2500);
       await smoothMove(500, 400, 900, 500, 25);
@@ -194,7 +194,7 @@ async function recordScene(scene, browser) {
       await smoothMove(900, 500, 960, 680, 25);
     }
     else if (scene.id === 'scene13_conclusion') {
-      const slideUrl = ile:///;
+      const slideUrl = `file:///${path.resolve('video/slides/scene13_summary.html').replace(/\\/g, '/')}`;
       await page.goto(slideUrl, { waitUntil: 'networkidle' });
       await page.waitForTimeout(3000);
       await smoothMove(400, 550, 800, 550, 25);
@@ -209,21 +209,20 @@ async function recordScene(scene, browser) {
       await page.waitForTimeout(targetMs - elapsed);
     }
   } catch (err) {
-    console.error(Error in scene :, err);
+    console.error(`Error in scene ${scene.id}:`, err);
   }
 
   const video = page.video();
   await context.close();
   const rawVideoPath = await video.path();
 
-  const finalRawPath = path.join(outputDir, ${scene.id}.webm);
+  const finalRawPath = path.join(outputDir, `${scene.id}.webm`);
   if (fs.existsSync(finalRawPath)) {
     fs.unlinkSync(finalRawPath);
   }
   fs.copyFileSync(rawVideoPath, finalRawPath);
-  console.log(Saved raw video to: );
+  console.log(`Saved raw video to: ${finalRawPath}`);
 
-  // Cleanup tempDir
   try {
     fs.rmSync(tempDir, { recursive: true, force: true });
   } catch (e) {}

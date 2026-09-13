@@ -29,3 +29,6 @@ cloudflared.exe
 # Video temporary outputs
 video/test_out/
 video/raw_scenes/
+video/processed_scenes/
+*.mp4
+*.webm
