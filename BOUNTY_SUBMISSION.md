@@ -31,7 +31,7 @@ https://github.com/Nudgen-Marketing/mermail-skills/pull/[YOUR_PR_NUMBER]
 
 ### 5. Link to Standalone Codebase
 ```text
-https://github.com/[YOUR_GITHUB_HANDLE]/mermail-operations-agent
+https://github.com/AtharvDhiman/mermail-operations-agent
 ```
 
 ### 6. Link to Video Demo
@@ -92,7 +92,7 @@ The demo autonomously showcases:
 
 ```bash
 # 1. Clone & install
-git clone https://github.com/[YOUR_GITHUB_HANDLE]/mermail-operations-agent.git
+git clone https://github.com/AtharvDhiman/mermail-operations-agent.git
 cd mermail-operations-agent
 npm install
 

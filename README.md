@@ -123,7 +123,7 @@ The project includes deterministic mock infrastructure and local test fixtures, 
 ### 1. Installation
 
 ```bash
-git clone https://github.com/[YOUR_GITHUB_HANDLE]/mermail-operations-agent.git
+git clone https://github.com/AtharvDhiman/mermail-operations-agent.git
 cd mermail-operations-agent
 npm install
 ```
