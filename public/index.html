@@ -3385,6 +3385,10 @@
             <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
             Audit Trail
           </button>
+          <button class="c-tab" id="tab-btn-skill" onclick="switchConsoleTab('skill')">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Skill Spec (SKILL.md)
+          </button>
         </div>
 
         <div style="display: flex; gap: 8px;">
@@ -3614,6 +3618,64 @@
         </div>
       </div>
 
+      <!-- Tab 6: In-DApp Agent Skill Specification (SKILL.md) -->
+      <div class="tab-view" id="view-skill">
+        <div class="skill-spec-wrapper">
+          <div class="skill-spec-header-card">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="brand-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border-color: rgba(16, 185, 129, 0.3);">100% SPEC VALIDATED</span>
+                <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-gold);">skills/mermail-operations-agent/SKILL.md</span>
+              </div>
+              <h3 style="font-family: var(--font-dapp); font-size: 18px; color: #fff; margin-top: 6px;">Mermail Autonomous Operations Agent Skill</h3>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                Reusable AI Agent Skill designed for OpenClaw / Claude / Antigravity with full dual-control policy governance and Web3 controls.
+              </p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn-scenario" id="btn-copy-skill" onclick="copySkillSpec()">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                Copy SKILL.md
+              </button>
+              <a href="/api/skill" target="_blank" class="btn-scenario" style="text-decoration: none;">
+                Raw JSON &nearr;
+              </a>
+            </div>
+          </div>
+
+          <!-- Structured Summary Grid -->
+          <div class="relayer-vault-grid" style="margin-bottom: 0;">
+            <div class="relayer-vault-card" style="min-height: auto;">
+              <div style="font-size: 12px; font-weight: 700; color: var(--accent-gold); margin-bottom: 6px;">PRIMARY POSITIONING</div>
+              <p style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+                <strong>Mermail provides the communication layer.</strong> Our Agent Skill turns incoming messages into secure, autonomous, multi-step operational workflows. The DApp provides visibility, approvals, execution controls, Web3 capabilities, and auditability.
+              </p>
+            </div>
+            <div class="relayer-vault-card" style="min-height: auto;">
+              <div style="font-size: 12px; font-weight: 700; color: var(--accent-blue); margin-bottom: 6px;">DUAL-CONTROL THRESHOLDS</div>
+              <p style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+                Financial transfers &gt;= 0.05 SOL or relayer deficits require explicit <code>Operator:Treasurer</code> authorization. External outbound emails require <code>Operator:Comms</code> confirmation.
+              </p>
+            </div>
+            <div class="relayer-vault-card" style="min-height: auto;">
+              <div style="font-size: 12px; font-weight: 700; color: var(--accent-emerald); margin-bottom: 6px;">FOLLOW-UP ENGINE</div>
+              <p style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+                Stateful cadence in <code>data/followups.json</code> automatically transitions to <code>CANCELLED_REPLIED</code> when an inbound counterparty reply is detected on the thread.
+              </p>
+            </div>
+          </div>
+
+          <!-- Live SKILL.md Content Box -->
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 12px; font-weight: 700; color: #fff;">LIVE SPECIFICATION SOURCE</span>
+              <span style="font-size: 11px; font-family: var(--font-mono); color: var(--text-tertiary);">Format: Markdown / YAML Frontmatter</span>
+            </div>
+            <pre class="skill-spec-raw-box" id="skill-raw-content">Loading live SKILL.md specification from /api/skill...</pre>
+          </div>
+        </div>
+      </div>
+
       <!-- Live Terminal Event Stream -->
       <div class="terminal-container">
         <div class="terminal-top">
@@ -3622,7 +3684,7 @@
         </div>
         <div class="terminal-body" id="term-logs">
           <div class="term-line"><span class="term-time">[00:00:00]</span> Mermail Operations Agent SSE stream connected.</div>
-          <div class="term-line"><span class="term-time">[00:00:01]</span> System initialized with 107 unit/integration tests verified.</div>
+          <div class="term-line"><span class="term-time">[00:00:01]</span> System initialized with 123 unit/integration tests verified.</div>
         </div>
       </div>
     </div>
@@ -3644,7 +3706,7 @@
         <div>git clone https://github.com/AtharvDhiman/mermail-operations-agent.git</div>
         <div>cd mermail-operations-agent &amp;&amp; npm install</div>
         <br>
-        <div class="comment"># 2. Run the 107-test suite (42 suites)</div>
+        <div class="comment"># 2. Run the 123-test suite (53 suites)</div>
         <div class="cmd">npm test</div>
         <br>
         <div class="comment"># 3. Validate Mermail skill standards</div>
