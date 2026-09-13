@@ -8,7 +8,7 @@ This guide is designed for Superteam Earn bounty judges to run, inspect, and eva
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/username/mermail-operations-agent.git
+git clone https://github.com/AtharvDhiman/mermail-operations-agent.git
 cd mermail-operations-agent
 
 # 2. Run the deterministic judge demo
