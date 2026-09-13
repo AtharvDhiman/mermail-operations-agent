@@ -5,7 +5,7 @@
     "from": "alerts@helius.dev",
     "to": ["ops@dapp.mermail.app"],
     "subject": "[ALERT] Relayer solana-mainnet-relayer-01 below safe threshold",
-    "date": "2026-09-12T19:45:00.000Z",
+    "date": "2026-09-12T20:30:00.000Z",
     "isRead": false,
     "scan_status": "clean",
     "sender_authentication": { "status": "pass" },
@@ -27,6 +27,51 @@
     "body": {
       "text": "Tenderly Infrastructure Alert:\n\nPaymaster ID: base-paymaster-relayer-01\nNetwork: base\nTarget Address: 0x742d35Cc6634C0532925a3b844Bc454e4438f44e\nCurrent Balance: 0.012 ETH\nMinimum Threshold: 0.02 ETH\nTarget Balance: 0.10 ETH",
       "html": "<p>Tenderly Infrastructure Alert...</p>"
+    }
+  },
+  {
+    "id": "email_sched_01",
+    "mailboxId": "mbx_ops_sentinel_01",
+    "from": "sarah.chen@partnercorp.com",
+    "to": ["ops@dapp.mermail.app"],
+    "subject": "Reschedule partnership sync",
+    "date": "2026-09-12T20:10:00.000Z",
+    "isRead": false,
+    "scan_status": "clean",
+    "sender_authentication": { "status": "pass" },
+    "body": {
+      "text": "Hi team,\n\nCan we move tomorrow's meeting to Friday at 3:00 PM UTC? We have an executive team review that just got scheduled during our previous time slot.\n\nLet me know if Friday works.",
+      "html": "<p>Can we move tomorrow's meeting to Friday at 3:00 PM UTC?</p>"
+    }
+  },
+  {
+    "id": "email_sales_01",
+    "mailboxId": "mbx_ops_sentinel_01",
+    "from": "david.ross@fintechventures.io",
+    "to": ["ops@dapp.mermail.app"],
+    "subject": "Enterprise Tier and Treasury API Pricing",
+    "date": "2026-09-12T20:15:00.000Z",
+    "isRead": false,
+    "scan_status": "clean",
+    "sender_authentication": { "status": "pass" },
+    "body": {
+      "text": "Hello,\n\nOur team is deploying a cross-border payment relayer network and looking for an autonomous operations solution. Could you provide enterprise pricing details and schedule a 15-minute demo this week?",
+      "html": "<p>Could you provide enterprise pricing details and schedule a demo?</p>"
+    }
+  },
+  {
+    "id": "email_support_01",
+    "mailboxId": "mbx_ops_sentinel_01",
+    "from": "alex.kumar@clientnode.org",
+    "to": ["ops@dapp.mermail.app"],
+    "subject": "Bug: webhook signing timeout error",
+    "date": "2026-09-12T20:20:00.000Z",
+    "isRead": false,
+    "scan_status": "clean",
+    "sender_authentication": { "status": "pass" },
+    "body": {
+      "text": "Hi Support,\n\nWe encountered an error when trying to verify signed webhooks on mainnet. The request times out after 10 seconds. Is this a known issue, and what is the recommended retry configuration?",
+      "html": "<p>We encountered an error when trying to verify signed webhooks...</p>"
     }
   },
   {

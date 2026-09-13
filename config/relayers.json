@@ -29,7 +29,7 @@
       "name": "Superteam Hackathon Relayer",
       "chain": "solana",
       "token": "SOL",
-      "address": "DemoRe1ayerWa11etAddressForSo1anaSuperteam11",
+      "address": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
       "minThreshold": 0.05,
       "targetBalance": 0.3,
       "maxSingleTopUp": 0.5,
@@ -46,6 +46,18 @@
       "targetBalance": 0.1,
       "maxSingleTopUp": 0.2,
       "alertEmailSender": "notify@tenderly.co",
+      "enabled": true
+    },
+    {
+      "id": "relayer_solana_yxassn",
+      "name": "Phantom Relayer",
+      "chain": "solana",
+      "token": "SOL",
+      "address": "5Q1VZ2BoTY29eUtbKV8NSLZ8EbgW5gCtnZbiEMyxaSSn",
+      "minThreshold": 0.1,
+      "targetBalance": 0.5,
+      "maxSingleTopUp": 0.5,
+      "alertEmailSender": "",
       "enabled": true
     }
   ],

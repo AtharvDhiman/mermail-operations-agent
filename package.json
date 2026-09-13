@@ -5,13 +5,19 @@
   "type": "module",
   "main": "src/sentinel-agent.js",
   "bin": {
+    "mermail-agent": "bin/cli.js",
     "mermail-sentinel": "bin/cli.js"
   },
   "scripts": {
-    "start": "node src/cli.js",
+    "start": "node bin/cli.js",
+    "agent": "node bin/cli.js",
     "serve": "node src/server.js",
     "live": "node src/server.js",
+    "tunnel": ".\\cloudflared.exe tunnel --url http://localhost:3333",
     "demo": "node demo/run-demo.mjs",
+    "doctor": "node bin/cli.js doctor",
+    "reset": "node bin/cli.js reset",
+    "setup": "node bin/cli.js doctor",
     "test": "node --test tests/**/*.test.mjs",
     "test:skill": "node tests/validate-skill.mjs",
     "validate": "node tests/validate-skill.mjs && node --test tests/**/*.test.mjs"

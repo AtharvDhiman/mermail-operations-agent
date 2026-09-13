@@ -62,7 +62,7 @@ export class MermailRelayerSentinel {
         isRead: false,
         sortColumn: 'date',
         sortDirection: 'DESC',
-        limit: 5
+        limit: 10
       }
     });
 

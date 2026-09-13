@@ -129,6 +129,31 @@ export class MockMermailMcpServer {
         };
       }
 
+      case 'send_email': {
+        const emailId = `msg_sent_${Date.now()}`;
+        this.sentReplies.push({
+          id: emailId,
+          to: args.body?.to,
+          subject: args.body?.subject,
+          body: args.body?.text,
+          timestamp: new Date().toISOString()
+        });
+        return {
+          id: emailId,
+          delivered: true,
+          status: 'sent'
+        };
+      }
+
+      case 'schedule_email_send': {
+        const schedId = `sched_send_${Date.now()}`;
+        return {
+          scheduledId: schedId,
+          status: 'scheduled',
+          executeAt: args.sendAt || new Date(Date.now() + 86400000).toISOString()
+        };
+      }
+
       case 'get_paybox_connection': {
         if (!this.payboxConnected) {
           return { status: 'DISCONNECTED', connect_handoff: { console_url: 'https://console.mermail.app/paybox/connect' } };
@@ -192,8 +217,24 @@ export class MockMermailMcpServer {
       }
 
       case 'paybox_get_request': {
-        const req = this.requests.get(args.requestId);
-        if (!req) throw new Error(`PayBox request not found: ${args.requestId}`);
+        let req = this.requests.get(args.requestId);
+        if (!req && (args.requestId === 'req_tx_latest' || !args.requestId)) {
+          const allReqs = Array.from(this.requests.values());
+          if (allReqs.length > 0) {
+            req = allReqs[allReqs.length - 1];
+          }
+        }
+        if (!req) {
+          // Return default successful settled mock request
+          req = {
+            requestId: args.requestId || 'req_tx_mock',
+            status: 'success',
+            chain: 'solana',
+            token: 'SOL',
+            amount: 1.5,
+            txHash: '5KtPn7qWJb4y9gZ8tX1mP4vL6kQ2sR3yE5wU8aN0pM'
+          };
+        }
         
         // Auto-resolve to success if queried in test / simulation
         if (req.status === 'pending_signature') {

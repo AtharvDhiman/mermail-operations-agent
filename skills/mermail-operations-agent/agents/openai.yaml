@@ -1,0 +1,5 @@
+display_name: "Mermail Operations Agent"
+short_description: "Autonomous operations agent for intelligent triage, multi-step planning, follow-ups, and dual-control approvals."
+default_prompt: "Use $mermail-operations-agent to triage incoming communications, generate autonomous execution plans, prepare context-aware email responses, and enforce dual-control human safety gates."
+type: "mcp"
+url: "https://console.mermail.app/mcp"

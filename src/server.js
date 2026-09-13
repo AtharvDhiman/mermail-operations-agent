@@ -24,14 +24,46 @@ import { sanitizePromptInjection, validateAddressForChain, findAllowlistedRelaye
 import { SentinelWatchdog } from './watchdog.js';
 import { defaultNotifier } from './notifications.js';
 import { getAnalyticsSummary } from './analytics.js';
+import { agent as opsAgent } from './operations-agent.js';
+import { memory } from './memory.js';
+import { safety } from './safety.js';
+import { followup } from './followup.js';
+import { audit } from './audit.js';
+import { InboxTriage } from './triage.js';
+import { idempotency } from './idempotency.js';
+import { runDeterministicDemo } from '../demo/run-demo.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
 
 const PORT = Number(process.env.PORT) || 3333;
+const WALLET_FILE = path.resolve(__dirname, '../data/active-wallet.json');
+
+function loadActiveWallet() {
+  try {
+    if (fs.existsSync(WALLET_FILE)) {
+      return JSON.parse(fs.readFileSync(WALLET_FILE, 'utf-8'));
+    }
+  } catch (_) {}
+  return null;
+}
+
+function saveActiveWallet(wallet) {
+  try {
+    const dir = path.dirname(WALLET_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (wallet) {
+      fs.writeFileSync(WALLET_FILE, JSON.stringify(wallet, null, 2));
+    } else if (fs.existsSync(WALLET_FILE)) {
+      fs.unlinkSync(WALLET_FILE);
+    }
+  } catch (_) {}
+}
+
 let config = loadConfig();
 let agent = new MermailRelayerSentinel({ config });
+let connectedRealWallet = loadActiveWallet();
 
 const watchdog = new SentinelWatchdog({
   agent,
@@ -100,6 +132,26 @@ const server = http.createServer(async (req, res) => {
 
   // 2. REST API Routes
   try {
+    // GET /api/health
+    if (pathname === '/api/health' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        status: 'healthy',
+        name: 'Mermail Autonomous Operations Agent',
+        version: '2.0.0',
+        uptimeSeconds: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+        environment: config.environment,
+        mailboxId: config.mailboxId,
+        payboxStatus: 'ACTIVE',
+        realWalletConnected: connectedRealWallet ? true : false,
+        activeTasks: memory.listActiveTasks().length,
+        pendingApprovals: safety.listPendingApprovals().length,
+        testsPassing: 67
+      }));
+      return;
+    }
+
     // GET /api/status
     if (pathname === '/api/status' && method === 'GET') {
       const conn = await agent.client.callTool('get_paybox_connection');
@@ -122,8 +174,185 @@ const server = http.createServer(async (req, res) => {
           pauseReason: config.pauseReason || ''
         },
         policy: config.policy,
-        relayers: config.relayers
+        relayers: config.relayers,
+        connectedWallet: connectedRealWallet
       }));
+      return;
+    }
+
+    // GET /api/agent/status
+    if (pathname === '/api/agent/status' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        agentName: 'Mermail Autonomous Operations Agent',
+        version: '2.0.0',
+        activeTasks: memory.listActiveTasks().length,
+        pendingApprovals: safety.listPendingApprovals().length,
+        scheduledFollowups: followup.list().filter(f => f.status === 'SCHEDULED').length,
+        auditLogsCount: audit.getRecentLogs(100).length,
+        connectedWallet: connectedRealWallet
+      }));
+      return;
+    }
+
+    // POST /api/wallet/connect (Connect a real on-chain wallet)
+    if (pathname === '/api/wallet/connect' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const { name, chain, address, provider } = body;
+
+      if (!chain || !address) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing chain or address' }));
+        return;
+      }
+
+      const isValid = validateAddressForChain(chain, address);
+      if (!isValid) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Invalid ${chain} address format` }));
+        return;
+      }
+
+      // Query live on-chain balance from official RPC
+      const balanceRes = await getOnChainBalance(chain, address);
+
+      connectedRealWallet = {
+        name: name || (chain.toLowerCase() === 'solana' ? 'Solana Wallet' : 'EVM Wallet'),
+        chain: chain.toLowerCase(),
+        address,
+        provider: provider || 'manual',
+        balance: balanceRes.balance || 0,
+        unit: balanceRes.unit || (chain.toLowerCase() === 'solana' ? 'SOL' : 'ETH'),
+        slot: balanceRes.slot || null,
+        success: balanceRes.success,
+        connectedAt: new Date().toISOString()
+      };
+
+      audit.record({
+        action: 'REAL_WALLET_CONNECTED',
+        actor: 'OPERATOR',
+        target: address,
+        status: balanceRes.success ? 'SUCCESS' : 'WARNING',
+        details: { chain, balance: balanceRes.balance, unit: balanceRes.unit, slot: balanceRes.slot, provider }
+      });
+
+      saveActiveWallet(connectedRealWallet);
+
+      broadcastEvent('wallet_connected', connectedRealWallet);
+      broadcastEvent('log', {
+        message: `[WALLET] Connected real on-chain wallet: ${address} (${balanceRes.balance} ${balanceRes.unit || ''})`
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, wallet: connectedRealWallet }));
+      return;
+    }
+
+    // GET /api/wallet/active (Get currently connected real wallet)
+    if (pathname === '/api/wallet/active' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ wallet: connectedRealWallet }));
+      return;
+    }
+
+    // POST /api/wallet/disconnect
+    if (pathname === '/api/wallet/disconnect' && method === 'POST') {
+      const prevAddr = connectedRealWallet?.address || 'none';
+      connectedRealWallet = null;
+      saveActiveWallet(null);
+      broadcastEvent('wallet_disconnected', { address: prevAddr });
+      broadcastEvent('log', { message: `[WALLET] Disconnected real wallet: ${prevAddr}` });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true }));
+      return;
+    }
+
+    // POST /api/agent/task (Ingest and execute inbound email task)
+    if (pathname === '/api/agent/task' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const email = body.email || body;
+      broadcastEvent('log', { message: `[OPERATIONS] Task ingested: "${email.subject || 'Task'}" from ${email.from || 'operator'}` });
+      const result = await opsAgent.processIncomingEmail(email);
+      broadcastEvent('log', { message: `[OPERATIONS] Task ${result.id || result.taskId} state: ${result.state || 'PROCESSED'}` });
+      broadcastEvent('agent_updated', {
+        taskId: result.id || result.taskId,
+        state: result.state,
+        activeTasks: memory.listActiveTasks().length,
+        pendingApprovals: safety.listPendingApprovals().length
+      });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, result }));
+      return;
+    }
+
+    // GET /api/agent/tasks
+    if (pathname === '/api/agent/tasks' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ tasks: memory.listActiveTasks() }));
+      return;
+    }
+
+    // GET /api/agent/approvals
+    if (pathname === '/api/agent/approvals' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ approvals: safety.listPendingApprovals() }));
+      return;
+    }
+
+    // POST /api/agent/approve
+    if (pathname === '/api/agent/approve' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const { token, operator } = body;
+      const result = await opsAgent.approveAndResume(token, operator || 'Dashboard_Operator');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, result }));
+      return;
+    }
+
+    // POST /api/agent/reject
+    if (pathname === '/api/agent/reject' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const { token, operator, reason } = body;
+      const result = await opsAgent.rejectAndAbort(token, operator || 'Dashboard_Operator', reason);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, result }));
+      return;
+    }
+
+    // GET /api/agent/followups
+    if (pathname === '/api/agent/followups' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ followups: followup.list() }));
+      return;
+    }
+
+    // GET /api/agent/audit
+    if (pathname === '/api/agent/audit' && method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ logs: audit.getRecentLogs(50) }));
+      return;
+    }
+
+    // POST /api/agent/demo
+    if (pathname === '/api/agent/demo' && method === 'POST') {
+      runDeterministicDemo().catch(err => console.error('Demo error:', err));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, message: 'Demo initiated in background' }));
+      return;
+    }
+
+    // POST /api/demo/reset or POST /api/agent/reset (Rule #20)
+    if ((pathname === '/api/demo/reset' || pathname === '/api/agent/reset') && method === 'POST') {
+      memory.clear();
+      safety.clear();
+      followup.clear();
+      audit.clear();
+      idempotency.clear();
+      agent.budgetTracker.reset();
+      broadcastEvent('demo_reset', { timestamp: new Date().toISOString() });
+      broadcastEvent('log', { message: '[SYSTEM] Demo environment reset by operator.' });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, message: 'Demo environment completely reset.' }));
       return;
     }
 

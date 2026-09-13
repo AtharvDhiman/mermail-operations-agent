@@ -6,7 +6,7 @@
 const DEFAULT_RPC_ENDPOINTS = {
   solana: 'https://api.mainnet-beta.solana.com',
   base: 'https://mainnet.base.org',
-  ethereum: 'https://cloudflare-eth.com'
+  ethereum: 'https://ethereum-rpc.publicnode.com'
 };
 
 /**

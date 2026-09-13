@@ -16,5 +16,12 @@ Thumbs.db
 
 # Runtime data
 data/*.json
+data/*.jsonl
 !data/.gitkeep
 
+# Temporary browser profiles
+temp-edge-profile/
+
+# Binaries and temp images
+cloudflared.exe
+*.png

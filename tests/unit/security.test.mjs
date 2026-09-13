@@ -6,6 +6,8 @@ import {
   validateAddressForChain,
   findAllowlistedRelayer,
   sanitizeEmailContent,
+  validateEmailAddress,
+  scanSuspiciousUrls,
   DailyBudgetTracker
 } from '../../src/security.js';
 
@@ -98,4 +100,52 @@ describe('Security & Invariant Tests', () => {
       assert.equal(tracker.canAfford(151.0), false);
     });
   });
+
+  describe('RFC 5322 Email Validation', () => {
+    it('should accept valid standard email addresses', () => {
+      assert.equal(validateEmailAddress('alice@mermail.app'), true);
+      assert.equal(validateEmailAddress('engineering.leads+tag@sub.example.com'), true);
+      assert.equal(validateEmailAddress('dev_user-123@domain.co.uk'), true);
+    });
+
+    it('should reject invalid or malformed email addresses', () => {
+      assert.equal(validateEmailAddress('not-an-email'), false);
+      assert.equal(validateEmailAddress('missing@domain'), false);
+      assert.equal(validateEmailAddress('@nodomain.com'), false);
+      assert.equal(validateEmailAddress('spaces in@address.com'), false);
+      assert.equal(validateEmailAddress(''), false);
+      assert.equal(validateEmailAddress(null), false);
+    });
+  });
+
+  describe('Phishing & Suspicious URL Detection', () => {
+    it('should detect raw IP address URLs', () => {
+      const text = 'Please check your balance at http://192.168.1.100/login immediately.';
+      const res = scanSuspiciousUrls(text);
+      assert.equal(res.hasSuspiciousUrls, true);
+      assert.ok(res.reasons.some(r => r.includes('IP address')));
+    });
+
+    it('should detect URLs with embedded credentials', () => {
+      const text = 'Login via http://admin:supersecret@suspicious-portal.com/auth';
+      const res = scanSuspiciousUrls(text);
+      assert.equal(res.hasSuspiciousUrls, true);
+      assert.ok(res.reasons.some(r => r.includes('embedded user credentials')));
+    });
+
+    it('should detect suspicious TLDs combined with phishing keywords', () => {
+      const text = 'Claim your reward at https://wallet-connect.xyz/claim-airdrop now!';
+      const res = scanSuspiciousUrls(text);
+      assert.equal(res.hasSuspiciousUrls, true);
+      assert.ok(res.reasons.some(r => r.includes('high-risk TLD')));
+    });
+
+    it('should pass benign corporate URLs', () => {
+      const text = 'Check out documentation at https://docs.mermail.app/overview and our blog at https://mermail.app/blog';
+      const res = scanSuspiciousUrls(text);
+      assert.equal(res.hasSuspiciousUrls, false);
+      assert.equal(res.suspiciousUrls.length, 0);
+    });
+  });
 });
+
