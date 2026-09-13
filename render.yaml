@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: mermail-operations-agent
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node src/server.js
+    envVars:
+      - key: NODE_VERSION
+        value: 22.19.0
+      - key: ENVIRONMENT
+        value: simulation
+      - key: MERMAIL_MAILBOX_ID
+        value: mbx_ops_sentinel_01
+      - key: DAILY_MAX_USD_CAP
+        value: "500.0"
+      - key: LOG_LEVEL
+        value: INFO
