@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mermail Agent Skill + Web3 Operations Control Center — Superteam Bounty</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <link rel="apple-touch-icon" href="/logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -137,15 +139,29 @@
     .brand-mark {
       width: 36px;
       height: 36px;
-      border-radius: 9px;
+      border-radius: 10px;
       background: linear-gradient(135deg, #1c202d 0%, #10121a 100%);
       border: 1px solid rgba(245, 158, 11, 0.45);
       box-shadow: 0 0 16px var(--accent-gold-glow);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--accent-gold);
       flex-shrink: 0;
+      overflow: hidden;
+      padding: 3px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .brand-group:hover .brand-mark {
+      transform: scale(1.05);
+      box-shadow: 0 0 22px rgba(245, 158, 11, 0.4);
+      border-color: rgba(245, 158, 11, 0.8);
+    }
+    .brand-logo-img, .brand-logo-svg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      border-radius: 7px;
     }
 
     .brand-title-wrap {
@@ -2704,12 +2720,38 @@
 
   <!-- Top Sticky Navigation (Web3 Operations Agent Bar) -->
   <header class="nav-wrapper">
-    <a href="#" class="brand-group">
+    <a href="#" class="brand-group" title="Mermail Agent Skill & Operations Control Center">
       <div class="brand-mark">
-        <svg class="icon icon-lg" viewBox="0 0 24 24">
-          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-          <polyline points="2 17 12 22 22 17"></polyline>
-          <polyline points="2 12 12 17 22 12"></polyline>
+        <svg class="brand-logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="mmGold" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fde047" />
+              <stop offset="50%" stop-color="#f59e0b" />
+              <stop offset="100%" stop-color="#d97706" />
+            </linearGradient>
+            <linearGradient id="mmCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#38bdf8" />
+              <stop offset="100%" stop-color="#0284c7" />
+            </linearGradient>
+            <linearGradient id="mmPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#c084fc" />
+              <stop offset="100%" stop-color="#7e22ce" />
+            </linearGradient>
+            <filter id="mmGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+          <circle cx="50" cy="50" r="44" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.3" stroke-dasharray="4 4" />
+          <path d="M22 70 L22 34 L38 46 L38 70 Z" fill="url(#mmGold)" />
+          <path d="M78 70 L78 34 L62 46 L62 70 Z" fill="url(#mmGold)" />
+          <path d="M22 34 L50 54 L78 34 L50 20 Z" fill="url(#mmCyan)" fill-opacity="0.95" />
+          <polygon points="50,34 62,46 50,66 38,46" fill="url(#mmPurple)" />
+          <polygon points="50,38 58,46 50,60 42,46" fill="#1e1b4b" fill-opacity="0.6" />
+          <circle cx="50" cy="48" r="4.5" fill="#ffffff" filter="url(#mmGlow)" />
+          <circle cx="50" cy="48" r="2.5" fill="#fbbf24" />
+          <path d="M36 74 L64 74" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.9" />
+          <path d="M42 80 L58 80" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-opacity="0.8" />
         </svg>
       </div>
       <div class="brand-title-wrap">
@@ -2788,6 +2830,21 @@
   <!-- Mobile Slide-Down Navigation Drawer -->
   <div class="mobile-nav-drawer" id="mobile-nav-drawer">
     <div class="mobile-nav-inner">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 4px 6px 14px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 10px;">
+        <div class="brand-mark" style="width: 30px; height: 30px; padding: 2px;">
+          <svg class="brand-logo-svg" viewBox="0 0 100 100" fill="none">
+            <circle cx="50" cy="50" r="44" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.3" stroke-dasharray="4 4" />
+            <path d="M22 70 L22 34 L38 46 L38 70 Z" fill="url(#mmGold)" />
+            <path d="M78 70 L78 34 L62 46 L62 70 Z" fill="url(#mmGold)" />
+            <path d="M22 34 L50 54 L78 34 L50 20 Z" fill="url(#mmCyan)" fill-opacity="0.95" />
+            <polygon points="50,34 62,46 50,66 38,46" fill="url(#mmPurple)" />
+            <circle cx="50" cy="48" r="4.5" fill="#ffffff" filter="url(#mmGlow)" />
+            <circle cx="50" cy="48" r="2.5" fill="#fbbf24" />
+            <path d="M36 74 L64 74" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.9" />
+          </svg>
+        </div>
+        <span style="font-family: var(--font-dapp); font-weight: 700; font-size: 14px; color: #fff;">MERMAIL AGENT <span class="brand-badge">v2.0</span></span>
+      </div>
       <div class="mobile-nav-links">
         <a class="mobile-nav-item" onclick="handleMobileNavClick('hero')">
           <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
@@ -3778,9 +3835,23 @@
   <!-- Footer -->
   <footer class="footer">
     <div class="footer-inner">
-      <div class="footer-brand">
-        <div><strong>Mermail Autonomous Operations Agent</strong> &bull; Superteam Earn Bounty Submission</div>
-        <div style="font-size: 12px; color: var(--text-tertiary);">Official Mermail Agent Skill &bull; Verified Autonomous Workforce</div>
+      <div class="footer-brand" style="display: flex; align-items: center; gap: 12px;">
+        <div class="brand-mark" style="width: 34px; height: 34px; padding: 2px;">
+          <svg class="brand-logo-svg" viewBox="0 0 100 100" fill="none">
+            <circle cx="50" cy="50" r="44" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.3" stroke-dasharray="4 4" />
+            <path d="M22 70 L22 34 L38 46 L38 70 Z" fill="url(#mmGold)" />
+            <path d="M78 70 L78 34 L62 46 L62 70 Z" fill="url(#mmGold)" />
+            <path d="M22 34 L50 54 L78 34 L50 20 Z" fill="url(#mmCyan)" fill-opacity="0.95" />
+            <polygon points="50,34 62,46 50,66 38,46" fill="url(#mmPurple)" />
+            <circle cx="50" cy="48" r="4.5" fill="#ffffff" filter="url(#mmGlow)" />
+            <circle cx="50" cy="48" r="2.5" fill="#fbbf24" />
+            <path d="M36 74 L64 74" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.9" />
+          </svg>
+        </div>
+        <div>
+          <div><strong>Mermail Autonomous Operations Agent</strong> &bull; Superteam Earn Bounty Submission</div>
+          <div style="font-size: 12px; color: var(--text-tertiary);">Official Mermail Agent Skill &bull; Verified Autonomous Workforce</div>
+        </div>
       </div>
       <div class="footer-links">
         <a href="#hero" class="footer-link">Back to top &uarr;</a>

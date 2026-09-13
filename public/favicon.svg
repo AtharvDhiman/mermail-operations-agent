@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="mermailGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="mermailCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="mermailPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc" />
+      <stop offset="100%" stop-color="#7e22ce" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1d29" />
+      <stop offset="100%" stop-color="#0b0d14" />
+    </linearGradient>
+    <linearGradient id="strokeGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#a855f7" stop-opacity="0.8" />
+    </linearGradient>
+  </defs>
+
+  <rect x="3" y="3" width="94" height="94" rx="22" fill="url(#bgGrad)" stroke="url(#strokeGold)" stroke-width="2" />
+  <path d="M22 70 L22 34 L38 46 L38 70 Z" fill="url(#mermailGold)" />
+  <path d="M78 70 L78 34 L62 46 L62 70 Z" fill="url(#mermailGold)" />
+  <path d="M22 34 L50 54 L78 34 L50 20 Z" fill="url(#mermailCyan)" fill-opacity="0.95" />
+  <polygon points="50,34 62,46 50,66 38,46" fill="url(#mermailPurple)" />
+  <circle cx="50" cy="48" r="4.5" fill="#ffffff" />
+  <circle cx="50" cy="48" r="2.5" fill="#fbbf24" />
+  <path d="M36 74 L64 74" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.9" />
+  <path d="M42 80 L58 80" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-opacity="0.8" />
+</svg>
