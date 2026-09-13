@@ -179,7 +179,9 @@ export class SafetyEngine {
     }
 
     // Scan email text for sensitive data leaks
-    const textToScan = [params.body, params.text, params.content, params.subject].filter(Boolean).join(' ');
+    const rawBody = params.body;
+    const bodyStr = typeof rawBody === 'object' ? (rawBody?.text || rawBody?.content || '') : rawBody;
+    const textToScan = [bodyStr, params.text, params.content, params.subject].filter(Boolean).join(' ');
     const sensitiveCheck = this.scanSensitiveData(textToScan);
     if (sensitiveCheck.hasSensitiveData) {
       return {
@@ -390,6 +392,29 @@ export class SafetyEngine {
 
   listPendingApprovals() {
     return Array.from(this.pendingApprovals.values()).filter(a => a.status === ApprovalStatus.PENDING);
+  }
+
+  cancelForTask(taskId, reason = 'Task cancelled or failed') {
+    if (!taskId) return 0;
+    let cancelled = 0;
+    for (const approval of this.pendingApprovals.values()) {
+      if (approval.taskId === taskId && approval.status === ApprovalStatus.PENDING) {
+        approval.status = ApprovalStatus.CANCELLED;
+        approval.cancelledAt = new Date().toISOString();
+        approval.cancelReason = reason;
+        cancelled += 1;
+        audit.record({
+          taskId,
+          action: 'APPROVAL_CANCELLED',
+          actor: 'SAFETY_ENGINE',
+          tool: approval.action,
+          status: 'CANCELLED',
+          details: { token: approval.token, reason }
+        });
+      }
+    }
+    if (cancelled > 0) this.save();
+    return cancelled;
   }
 
   clear() {

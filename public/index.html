@@ -2027,7 +2027,7 @@
     </nav>
 
     <div class="nav-actions">
-      <div class="btn-live-pulse radar-pulse-wrap" title="Engine status: Verified with 67/67 tests passing">
+      <div class="btn-live-pulse radar-pulse-wrap" title="Engine status: Verified with 107/107 tests passing">
         <span class="radar-ring"></span>
         <span class="pulse-dot"></span>
         <span>PROTOCOL LIVE</span>
@@ -2124,8 +2124,8 @@
           <span class="stat-card-title">Verified Test Suites</span>
           <svg class="icon stat-card-icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
         </div>
-        <div class="stat-card-val">67 / 67 PASS</div>
-        <div class="stat-card-sub">26 Unit & Integration Suites &bull; Mermail Compliant</div>
+        <div class="stat-card-val">107 / 107 PASS</div>
+        <div class="stat-card-sub">42 Unit & Integration Suites &bull; Mermail Compliant</div>
         <div class="dapp-fuel-wrap">
           <div class="dapp-fuel-fill" style="width: 100%; background: #10b981;"></div>
         </div>
@@ -2345,7 +2345,7 @@
       <span class="section-eyebrow">VERIFIED PROTOCOL STATE MACHINE</span>
       <h2 class="section-title">The 7-Step Autonomous DApp Lifecycle</h2>
       <p class="section-desc">
-        Engineered for absolute reliability in decentralized production environments. Every inbound message traverses a strict, verified state machine before any external action or on-chain transfer occurs.
+        Engineered for verified execution in decentralized environments. Every inbound message traverses a strict, verified state machine before any external action or on-chain transfer occurs.
       </p>
     </div>
 
@@ -2419,7 +2419,7 @@
   <section class="section-container" id="modes">
     <div class="section-header-box">
       <span class="section-eyebrow">MULTI-CHAIN CAPABILITIES</span>
-      <h2 class="section-title">Four Production-Grade DApp Agent Modes</h2>
+      <h2 class="section-title">Four Production-Oriented Agent Modes</h2>
       <p class="section-desc">
         A single unified agent capable of dynamically switching execution strategies based on parsed intent, sender profile, and risk level.
       </p>
@@ -2876,7 +2876,7 @@
         </div>
         <div class="terminal-body" id="term-logs">
           <div class="term-line"><span class="term-time">[00:00:00]</span> Mermail Operations Agent SSE stream connected.</div>
-          <div class="term-line"><span class="term-time">[00:00:01]</span> System initialized with 67 unit/integration tests verified.</div>
+          <div class="term-line"><span class="term-time">[00:00:01]</span> System initialized with 107 unit/integration tests verified.</div>
         </div>
       </div>
     </div>
@@ -2898,7 +2898,7 @@
         <div>git clone https://github.com/AtharvDhiman/mermail-operations-agent.git</div>
         <div>cd mermail-operations-agent &amp;&amp; npm install</div>
         <br>
-        <div class="comment"># 2. Run the 67-test suite (26 suites)</div>
+        <div class="comment"># 2. Run the 107-test suite (42 suites)</div>
         <div class="cmd">npm test</div>
         <br>
         <div class="comment"># 3. Validate Mermail skill standards</div>
@@ -3128,6 +3128,17 @@
       }
     };
 
+    // HTML entity escaping for XSS prevention
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     // Logging helper
     function logTerm(msg) {
       const box = document.getElementById('term-logs');
@@ -3135,7 +3146,7 @@
       const time = new Date().toLocaleTimeString();
       const div = document.createElement('div');
       div.className = 'term-line';
-      div.innerHTML = `<span class="term-time">[${time}]</span> ${msg}`;
+      div.innerHTML = `<span class="term-time">[${escapeHtml(time)}]</span> ${escapeHtml(msg)}`;
       box.appendChild(div);
       box.scrollTop = box.scrollHeight;
     }
@@ -3220,8 +3231,10 @@
       // Update Triage Box
       const catBadge = document.getElementById('res-category-badge');
       catBadge.innerText = `${task.category || 'GENERAL_OPS'} (${task.priority || 'P3'})`;
+      const safeIntent = escapeHtml(task.intent || 'Execute Task');
+      const safeUrgency = escapeHtml(task.urgency || 'MEDIUM');
       document.getElementById('res-intent-text').innerHTML = 
-        `Detected intent: <strong>${task.intent || 'Execute Task'}</strong> | Urgency: <strong>${task.urgency || 'MEDIUM'}</strong>`;
+        `Detected intent: <strong>${safeIntent}</strong> | Urgency: <strong>${safeUrgency}</strong>`;
 
       const confScore = task.confidence?.score || 0.9;
       const confPct = Math.round(confScore * 100);
@@ -3257,12 +3270,14 @@
         if (isDone) iconHtml = '<span class="step-status-icon done">✓</span>';
         else if (isPause) iconHtml = '<span class="step-status-icon pause">⏳</span>';
 
+        const safeStepName = escapeHtml(step.name || '');
+        const safeTool = escapeHtml(step.tool || '');
         stepEl.innerHTML = `
           <div class="step-name-box">
             ${iconHtml}
-            <span>${idx + 1}. ${step.name}</span>
+            <span>${idx + 1}. ${safeStepName}</span>
           </div>
-          <span class="step-tool-badge" style="${step.requiresApproval ? 'color: var(--danger); background: rgba(239, 68, 68, 0.1);' : ''}">${step.tool}</span>
+          <span class="step-tool-badge" style="${step.requiresApproval ? 'color: var(--danger); background: rgba(239, 68, 68, 0.1);' : ''}">${safeTool}</span>
         `;
         stepsListEl.appendChild(stepEl);
       });
@@ -3273,8 +3288,10 @@
         activePendingApprovalToken = taskRes.approvalToken;
         document.getElementById('wb-appr-token').innerText = activePendingApprovalToken;
         const preview = taskRes.approvalPreview || {};
+        const safeAction = escapeHtml(preview.action || 'reply_to_email');
+        const safeTarget = escapeHtml(preview.target || task.sender || 'System');
         document.getElementById('wb-appr-summary').innerHTML = 
-          `High-risk action: <strong>${preview.action || 'reply_to_email'}</strong> on target <code>${preview.target || task.sender}</code> requires operator authorization.`;
+          `High-risk action: <strong>${safeAction}</strong> on target <code>${safeTarget}</code> requires operator authorization.`;
         gateContainer.style.display = 'flex';
         document.getElementById('wb-status-tag').innerText = 'PAUSED AT DUAL-CONTROL';
         document.getElementById('wb-status-tag').className = 'stage-badge paused';
@@ -3781,15 +3798,23 @@
 
           statusData.relayers.forEach(r => {
             const tr = document.createElement('tr');
+            const safeName = escapeHtml(r.name || r.id);
+            const safeChain = escapeHtml(String(r.chain || '').toUpperCase());
+            const rawAddr = String(r.address || '');
+            const safeAddr = escapeHtml(rawAddr.length > 10 ? `${rawAddr.slice(0, 6)}...${rawAddr.slice(-4)}` : rawAddr);
+            const safeThreshold = escapeHtml(r.minThreshold);
+            const safeTargetBal = escapeHtml(r.targetBalance);
+            const safeToken = escapeHtml(r.token);
+            const safeRelayerId = escapeHtml(r.id);
             tr.innerHTML = `
-              <td><strong>${r.name || r.id}</strong></td>
-              <td><span class="brand-badge">${r.chain.toUpperCase()}</span></td>
-              <td><code>${r.address.slice(0, 6)}...${r.address.slice(-4)}</code></td>
-              <td>${r.minThreshold} ${r.token}</td>
-              <td>${r.targetBalance} ${r.token}</td>
+              <td><strong>${safeName}</strong></td>
+              <td><span class="brand-badge">${safeChain}</span></td>
+              <td><code>${safeAddr}</code></td>
+              <td>${safeThreshold} ${safeToken}</td>
+              <td>${safeTargetBal} ${safeToken}</td>
               <td><span class="stage-badge ${r.enabled ? 'safe' : 'high-risk'}">${r.enabled ? 'ONLINE' : 'PAUSED'}</span></td>
               <td>
-                <button class="btn-scenario" style="padding: 4px 8px; font-size: 11px;" onclick="quickTopUp('${r.id}', ${r.minThreshold})">
+                <button class="btn-scenario" style="padding: 4px 8px; font-size: 11px;" onclick="quickTopUp('${safeRelayerId.replace(/'/g, "\\'")}', ${Number(r.minThreshold) || 0})">
                   Top Up
                 </button>
               </td>
@@ -3828,12 +3853,16 @@
           document.getElementById('tasks-count-badge').innerText = tasksData.tasks.length;
           tasksData.tasks.forEach(t => {
             const tr = document.createElement('tr');
+            const safeId = escapeHtml(t.id || t.taskId);
+            const safeCat = escapeHtml(t.category || 'GENERAL_OPS');
+            const safeState = escapeHtml(t.state);
+            const safeUrgency = escapeHtml(t.urgency || 'MEDIUM');
             tr.innerHTML = `
-              <td><code>${t.id || t.taskId}</code></td>
-              <td><span class="brand-badge">${t.category || 'GENERAL_OPS'}</span></td>
-              <td>${t.state}</td>
-              <td>${t.urgency || 'MEDIUM'}</td>
-              <td><span class="stage-badge ${t.state === 'COMPLETED' ? 'safe' : 'high-risk'}">${t.state}</span></td>
+              <td><code>${safeId}</code></td>
+              <td><span class="brand-badge">${safeCat}</span></td>
+              <td>${safeState}</td>
+              <td>${safeUrgency}</td>
+              <td><span class="stage-badge ${t.state === 'COMPLETED' ? 'safe' : 'high-risk'}">${safeState}</span></td>
             `;
             tasksTbody.appendChild(tr);
           });
@@ -3852,15 +3881,19 @@
             approvalsData.approvals.forEach(a => {
               const card = document.createElement('div');
               card.className = 'approval-gate-card';
+              const safeSummary = escapeHtml(a.preview?.summary || a.action);
+              const safeToken = escapeHtml(a.token);
+              const safeTarget = escapeHtml(a.preview?.target || 'System');
+              const safeImpact = escapeHtml(a.preview?.impact || 'High risk operation');
               card.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-weight: 700; color: #fff;">${a.preview?.summary || a.action}</span>
-                  <span class="approval-token-chip">${a.token}</span>
+                  <span style="font-weight: 700; color: #fff;">${safeSummary}</span>
+                  <span class="approval-token-chip">${safeToken}</span>
                 </div>
-                <div style="font-size: 12px; color: #cbd5e1;">Target: <code>${a.preview?.target || 'System'}</code> | Impact: ${a.preview?.impact || 'High risk operation'}</div>
+                <div style="font-size: 12px; color: #cbd5e1;">Target: <code>${safeTarget}</code> | Impact: ${safeImpact}</div>
                 <div class="approval-actions-row">
-                  <button class="btn-approve" onclick="resolveApproval('${a.token}', true)">Authorize</button>
-                  <button class="btn-reject" onclick="resolveApproval('${a.token}', false)">Reject</button>
+                  <button class="btn-approve" onclick="resolveApproval('${safeToken.replace(/'/g, "\\'")}', true)">Authorize</button>
+                  <button class="btn-reject" onclick="resolveApproval('${safeToken.replace(/'/g, "\\'")}', false)">Reject</button>
                 </div>
               `;
               apprBox.appendChild(card);
@@ -3877,12 +3910,17 @@
           document.getElementById('followups-count-badge').innerText = fupData.followups.length;
           fupData.followups.forEach(f => {
             const tr = document.createElement('tr');
+            const safeId = escapeHtml(f.id);
+            const safeRecipient = escapeHtml(f.recipient);
+            const safeSubject = escapeHtml(f.subject);
+            const safeDate = escapeHtml(new Date(f.scheduledDate).toLocaleString());
+            const safeStatus = escapeHtml(f.status);
             tr.innerHTML = `
-              <td><code>${f.id}</code></td>
-              <td>${f.recipient}</td>
-              <td>${f.subject}</td>
-              <td>${new Date(f.scheduledDate).toLocaleString()}</td>
-              <td><span class="stage-badge ${f.status === 'SCHEDULED' ? 'safe' : 'high-risk'}">${f.status}</span></td>
+              <td><code>${safeId}</code></td>
+              <td>${safeRecipient}</td>
+              <td>${safeSubject}</td>
+              <td>${safeDate}</td>
+              <td><span class="stage-badge ${f.status === 'SCHEDULED' ? 'safe' : 'high-risk'}">${safeStatus}</span></td>
               <td><span style="color: var(--text-tertiary); font-size: 11px;">Auto-cancels on reply</span></td>
             `;
             fupTbody.appendChild(tr);
@@ -3897,11 +3935,16 @@
           auditTbody.innerHTML = '';
           auditData.logs.slice(0, 8).forEach(l => {
             const tr = document.createElement('tr');
+            const safeTime = escapeHtml(new Date(l.timestamp).toLocaleTimeString());
+            const safeAction = escapeHtml(l.action || l.eventType);
+            const safeTarget = escapeHtml(l.taskId || l.target || '-');
+            const rawDetail = l.details?.summary || l.details?.reason || (typeof l.details === 'object' ? JSON.stringify(l.details) : String(l.details || ''));
+            const safeDetails = escapeHtml(rawDetail);
             tr.innerHTML = `
-              <td><span class="term-time">${new Date(l.timestamp).toLocaleTimeString()}</span></td>
-              <td><strong>${l.action || l.eventType}</strong></td>
-              <td><code>${l.taskId || l.target || '-'}</code></td>
-              <td style="color: var(--text-secondary);">${l.details?.summary || l.details?.reason || JSON.stringify(l.details || {})}</td>
+              <td><span class="term-time">${safeTime}</span></td>
+              <td><strong>${safeAction}</strong></td>
+              <td><code>${safeTarget}</code></td>
+              <td style="color: var(--text-secondary);">${safeDetails}</td>
             `;
             auditTbody.appendChild(tr);
           });
@@ -4299,17 +4342,17 @@
         });
       }
 
-      // Card 4: Verified Test Suites (67 / 67 PASS)
+      // Card 4: Verified Test Suites (107 / 107 PASS)
       const el4 = document.querySelector('.stat-card:nth-child(4) .stat-card-val');
       if (el4 && typeof anime !== 'undefined') {
         const obj4 = { val: 0 };
         anime({
           targets: obj4,
-          val: 67,
+          val: 107,
           round: 1,
           duration: 800,
           easing: 'easeOutExpo',
-          update: () => { el4.innerText = `${obj4.val} / 67 PASS`; }
+          update: () => { el4.innerText = `${obj4.val} / 107 PASS`; }
         });
       }
     }

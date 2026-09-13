@@ -4,6 +4,72 @@
  * webhook endpoints (Discord, Slack, Telegram).
  */
 
+export function isPrivateOrReservedHost(host) {
+  if (!host || typeof host !== 'string') return true;
+  let cleanHost = host.toLowerCase().trim().replace(/^\[|\]$/g, '');
+
+  if (
+    cleanHost === 'localhost' ||
+    cleanHost.endsWith('.localhost') ||
+    cleanHost.endsWith('.local') ||
+    cleanHost.endsWith('.internal') ||
+    cleanHost === 'metadata.google.internal'
+  ) {
+    return true;
+  }
+
+  // Check IPv6 loopback / unspecified / private
+  if (
+    cleanHost === '::1' ||
+    cleanHost === '::' ||
+    cleanHost === '0:0:0:0:0:0:0:1' ||
+    cleanHost === '0:0:0:0:0:0:0:0' ||
+    cleanHost.startsWith('fe80:') ||
+    cleanHost.startsWith('fc00:') ||
+    cleanHost.startsWith('fd')
+  ) {
+    return true;
+  }
+
+  // Handle IPv4 mapped IPv6 (e.g. ::ffff:127.0.0.1)
+  if (cleanHost.startsWith('::ffff:')) {
+    cleanHost = cleanHost.slice(7);
+  }
+
+  // Handle single integer or hex IP format (e.g. 2130706433 or 0x7f000001)
+  if (/^(?:0x[0-9a-f]+|\d+)$/i.test(cleanHost)) {
+    return true;
+  }
+
+  // Check standard IPv4 dotted notation
+  const ipv4Match = cleanHost.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const octets = ipv4Match.slice(1).map(Number);
+    if (octets.some(o => o < 0 || o > 255)) return true;
+
+    const [a, b, c, d] = octets;
+
+    // 0.0.0.0/8
+    if (a === 0) return true;
+    // 127.0.0.0/8 (Loopback)
+    if (a === 127) return true;
+    // 10.0.0.0/8 (Private)
+    if (a === 10) return true;
+    // 172.16.0.0/12 (Private 172.16 - 172.31)
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    // 192.168.0.0/16 (Private)
+    if (a === 192 && b === 168) return true;
+    // 169.254.0.0/16 (Link-local & Cloud Metadata)
+    if (a === 169 && b === 254) return true;
+    // 100.64.0.0/10 (Carrier-grade NAT)
+    if (a === 100 && b >= 64 && b <= 127) return true;
+    // 255.255.255.255 (Broadcast)
+    if (a === 255 && b === 255 && c === 255 && d === 255) return true;
+  }
+
+  return false;
+}
+
 export class NotificationDispatcher {
   constructor(options = {}) {
     this.webhookUrl = options.webhookUrl || process.env.SENTINEL_WEBHOOK_URL || null;
@@ -26,9 +92,8 @@ export class NotificationDispatcher {
       }
 
       const hostname = parsed.hostname.toLowerCase();
-      const BLOCKED_HOSTS = ['169.254.169.254', '169.254.170.2', 'metadata.google.internal', 'metadata.internal'];
-      if (BLOCKED_HOSTS.includes(hostname) || hostname.endsWith('.internal')) {
-        throw new Error('Access to cloud metadata endpoints is strictly prohibited');
+      if (isPrivateOrReservedHost(hostname)) {
+        throw new Error('Access to private, loopback, or cloud metadata endpoints is strictly prohibited');
       }
 
       this.webhookUrl = trimmed;

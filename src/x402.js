@@ -71,9 +71,35 @@ export class X402PaymentEngine {
    */
   static settlePayment(quote, approvalToken) {
     const approval = safety.getApproval(approvalToken);
-    if (!approval || approval.status !== 'APPROVED') {
-      throw new Error(`Cannot settle x402 payment without approved token. Status: ${approval?.status || 'NOT_FOUND'}`);
+    if (!approval) {
+      throw new Error(`Approval token '${approvalToken}' not found.`);
     }
+    if (approval.status === 'CONSUMED') {
+      throw new Error(`Approval token '${approvalToken}' has already been consumed (replay blocked).`);
+    }
+    if (approval.status !== 'APPROVED') {
+      throw new Error(`Cannot settle x402 payment without approved token. Status: ${approval.status}`);
+    }
+
+    if (!quote || !quote.id) {
+      throw new Error('Valid payment quote is required for settlement.');
+    }
+
+    const approvedPayload = approval.payload || {};
+    if (approvedPayload.id && approvedPayload.id !== quote.id) {
+      throw new Error(`Parameter tampering detected: quote ID '${quote.id}' does not match approved quote '${approvedPayload.id}'.`);
+    }
+    if (approvedPayload.amount !== undefined && Number(approvedPayload.amount) !== Number(quote.amount)) {
+      throw new Error(`Parameter tampering detected: settlement amount '${quote.amount}' does not match approved amount '${approvedPayload.amount}'.`);
+    }
+    if (approvedPayload.payToAddress && quote.payToAddress && approvedPayload.payToAddress !== quote.payToAddress) {
+      throw new Error('Parameter tampering detected: destination address does not match approved quote.');
+    }
+
+    // Mark approval token consumed to prevent capture-replay
+    approval.status = 'CONSUMED';
+    approval.consumedAt = new Date().toISOString();
+    safety.save();
 
     quote.status = 'SETTLED';
     quote.settledAt = new Date().toISOString();

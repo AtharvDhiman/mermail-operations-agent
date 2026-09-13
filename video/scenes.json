@@ -1,0 +1,106 @@
+[
+  {
+    "id": "scene01_intro",
+    "title": "Introduction & Live Deployment",
+    "text": "This is the Mermail Operations Agent, live in production. Mermail provides our autonomous agent with an operational communication layer, while our Agent Skill turns incoming decentralized messages into secure, multi-step operations.",
+    "audioFile": "video/audio\\scene01_intro.mp3",
+    "audioDuration": 14.5,
+    "sceneDuration": 15.7
+  },
+  {
+    "id": "scene02_problem",
+    "title": "The Problem vs Autonomous Workflow",
+    "text": "Traditional email automation is rigid and brittle\u2014blindly triggering actions from simple keywords. Mermail Operations Agent treats inbound communications as untrusted events, orchestrating end-to-end operational workflows with formal safety controls.",
+    "audioFile": "video/audio\\scene02_problem.mp3",
+    "audioDuration": 16.15,
+    "sceneDuration": 17.35
+  },
+  {
+    "id": "scene03_mermail",
+    "title": "Mermail Communication Layer",
+    "text": "Mermail gives the agent a dedicated mailbox identity. The Agent Skill continuously ingests incoming messages, checks thread context, and monitors on-chain relayer gas reserves via native RPC.",
+    "audioFile": "video/audio\\scene03_mermail.mp3",
+    "audioDuration": 12.82,
+    "sceneDuration": 14.02
+  },
+  {
+    "id": "scene04_modes",
+    "title": "Four Specialized Agent Modes",
+    "text": "The same underlying architecture powers four specialized operational modes: Automated Meeting Scheduling with calendar constraints, Sales Lead Qualification with ICP scoring, Customer Support ticket triage, and our primary Relayer Sentinel mode for automated Web3 gas monitoring.",
+    "audioFile": "video/audio\\scene04_modes.mp3",
+    "audioDuration": 17.42,
+    "sceneDuration": 18.62
+  },
+  {
+    "id": "scene05_scenario",
+    "title": "Executing Autonomous Scenario",
+    "text": "Let's trigger an autonomous operations scenario. The agent ingests an urgent alert reporting a Solana relayer balance deficit. It classifies the message as a Priority Zero operational incident and autonomously builds a four-step execution DAG.",
+    "audioFile": "video/audio\\scene05_scenario.mp3",
+    "audioDuration": 15.62,
+    "sceneDuration": 16.82
+  },
+  {
+    "id": "scene06_dag",
+    "title": "DAG Planning & Execution Flow",
+    "text": "Instead of allowing an LLM to directly execute actions, the skill separates planning, policy validation, execution, and verification into discrete, idempotent steps.",
+    "audioFile": "video/audio\\scene06_dag.mp3",
+    "audioDuration": 11.86,
+    "sceneDuration": 13.06
+  },
+  {
+    "id": "scene07_security",
+    "title": "Security Shield & Safety Invariants",
+    "text": "Every message is scanned for adversarial prompt injection. Unallowlisted addresses are rejected, and disbursements are bound by a rolling daily budget cap and an instant emergency circuit breaker.",
+    "audioFile": "video/audio\\scene07_security.mp3",
+    "audioDuration": 11.57,
+    "sceneDuration": 12.77
+  },
+  {
+    "id": "scene08_approval",
+    "title": "Human-in-the-Loop Dual-Control Gate",
+    "text": "Here is the core safety invariant: human dual-control. Before any financial disbursement or external email is dispatched, execution halts at an approval gate. The operator reviews the 128-bit cryptographic token and approves the transfer.",
+    "audioFile": "video/audio\\scene08_approval.mp3",
+    "audioDuration": 15.82,
+    "sceneDuration": 17.02
+  },
+  {
+    "id": "scene09_settlement",
+    "title": "PayBox Settlement & Verification",
+    "text": "Upon operator authorization, the agent resumes execution, settles the transfer through the PayBox gateway, verifies the transaction receipt, and completes the workflow.",
+    "audioFile": "video/audio\\scene09_settlement.mp3",
+    "audioDuration": 10.13,
+    "sceneDuration": 11.33
+  },
+  {
+    "id": "scene10_audit",
+    "title": "Append-Only Audit Trail",
+    "text": "Every single decision, state transition, and operator intervention is recorded in an append-only audit trail, ensuring complete operational transparency.",
+    "audioFile": "video/audio\\scene10_audit.mp3",
+    "audioDuration": 9.74,
+    "sceneDuration": 10.94
+  },
+  {
+    "id": "scene11_skillmd",
+    "title": "Standardized SKILL.md Deliverable",
+    "text": "The core deliverable is a standardized, reusable Mermail Agent Skill defined in SKILL.md\u2014compatible with any agent framework that supports Mermail.",
+    "audioFile": "video/audio\\scene11_skillmd.mp3",
+    "audioDuration": 9.62,
+    "sceneDuration": 10.82
+  },
+  {
+    "id": "scene12_tests",
+    "title": "Production Quality & 107 Automated Tests",
+    "text": "Reliability is verified by an automated test suite: 107 unit and security regression tests passing across 42 suites with a 100 percent pass rate.",
+    "audioFile": "video/audio\\scene12_tests.mp3",
+    "audioDuration": 10.39,
+    "sceneDuration": 11.59
+  },
+  {
+    "id": "scene13_conclusion",
+    "title": "Conclusion & Architecture Summary",
+    "text": "Mermail provides the communication layer. Our Agent Skill turns that communication into secure, auditable, multi-step autonomous operations. Mermail Operations Agent\u2014built for Superteam Earn.",
+    "audioFile": "video/audio\\scene13_conclusion.mp3",
+    "audioDuration": 12.41,
+    "sceneDuration": 13.61
+  }
+]

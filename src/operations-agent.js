@@ -176,11 +176,19 @@ export class MermailOperationsAgent {
    * Resumes a task that was paused awaiting operator approval
    */
   async approveAndResume(token, operator = 'operator') {
-    const approval = safety.approve(token, operator);
-    const task = memory.getTask(approval.taskId);
-    if (!task) {
-      throw new Error(`Task ${approval.taskId} not found.`);
+    const pendingApproval = safety.getApproval(token);
+    if (!pendingApproval) {
+      throw new Error(`Approval token '${token}' not found.`);
     }
+    const task = memory.getTask(pendingApproval.taskId);
+    if (!task) {
+      throw new Error(`Task ${pendingApproval.taskId} not found.`);
+    }
+    if (task.state !== 'WAITING_APPROVAL') {
+      throw new Error(`Cannot approve task ${task.id}: task is in '${task.state}' state, expected 'WAITING_APPROVAL'.`);
+    }
+
+    const approval = safety.approve(token, operator);
 
     // Mark step approved in task plan
     const step = task.plan?.steps?.find(s => s.approvalToken === token);

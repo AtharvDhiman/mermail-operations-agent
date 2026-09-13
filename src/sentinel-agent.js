@@ -7,6 +7,7 @@ import {
   sanitizeEmailContent,
   DailyBudgetTracker
 } from './security.js';
+import { idempotency } from './idempotency.js';
 
 export class MermailRelayerSentinel {
   constructor(options = {}) {
@@ -232,82 +233,142 @@ export class MermailRelayerSentinel {
       throw new Error(`Execution halted: Emergency circuit breaker is ACTIVE (${this.config.pauseReason || 'Treasury disbursements frozen by operator'})`);
     }
 
-    if (!incident || !incident.targetAddress) {
+    if (!incident || !incident.targetAddress || !incident.chain) {
       throw new Error('No valid incident provided for replenishment.');
     }
 
-    this.status = SentinelStatus.SIGNING_PENDING;
-
-    // 1. If swap required, execute swap first
-    if (incident.route === 'SWAP_THEN_TRANSFER') {
-      await this.client.callTool('paybox_request_swap', {
-        chain: incident.chain,
-        fromToken: 'USDC',
-        toToken: incident.token,
-        fromAmount: incident.proposedTopUpUsd.toString()
-      });
+    // 1. Verify Address Format for Chain
+    const isValidFormat = validateAddressForChain(incident.chain, incident.targetAddress);
+    if (!isValidFormat) {
+      throw new Error(`Security Violation: Invalid ${incident.chain} address format for '${incident.targetAddress}'`);
     }
 
-    // 2. Request transfer via PayBox
-    const transferRes = await this.client.callTool('paybox_request_transfer', {
-      chain: incident.chain,
-      token: incident.token,
-      amount: incident.proposedTopUp.toString(),
-      destinationAddress: incident.targetAddress
-    });
+    // 2. Verify Cryptographic Allowlist Membership
+    const relayer = (this.config.relayers || []).find(r => 
+      r.address.toLowerCase() === incident.targetAddress.toLowerCase() && 
+      (!incident.chain || r.chain.toLowerCase() === incident.chain.toLowerCase())
+    );
+    if (!relayer) {
+      throw new Error(`Security Violation: Target address '${incident.targetAddress}' is not authorized in the relayer allowlist.`);
+    }
 
-    const requestId = transferRes.requestId;
-    const signingUrl = transferRes.signing_handoff?.console_url;
+    if (!relayer.enabled) {
+      throw new Error(`Disbursement blocked: Relayer '${relayer.id}' is currently disabled.`);
+    }
 
-    // 3. Reconcile settlement
-    const settlementRes = await this.client.callTool('paybox_get_request', { requestId });
+    // 3. Verify Amount & Spending Limits
+    const amount = Number(incident.proposedTopUp);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error('Proposed top-up amount must be a positive finite number.');
+    }
 
-    if (settlementRes.status === 'success') {
-      this.status = SentinelStatus.SETTLED_ON_CHAIN;
-      this.budgetTracker.recordDisbursement(incident.proposedTopUpUsd, {
-        relayerId: incident.relayerId,
-        txHash: settlementRes.txHash
+    if (relayer.maxSingleTopUp !== undefined && amount > relayer.maxSingleTopUp) {
+      throw new Error(`Amount (${amount} ${incident.token}) exceeds relayer-specific single top-up cap of ${relayer.maxSingleTopUp} ${incident.token}`);
+    }
+
+    const tokenPriceUsd = incident.token === 'SOL' ? 150 : (incident.token === 'ETH' ? 2500 : 1);
+    const usdValue = Number(incident.proposedTopUpUsd) || (amount * tokenPriceUsd);
+
+    if (usdValue > (this.config.maxSingleTopUpUsd || 150)) {
+      throw new Error(`Proposed top-up ($${usdValue.toFixed(2)}) exceeds single disbursement cap of $${this.config.maxSingleTopUpUsd}`);
+    }
+
+    if (!this.budgetTracker.canAfford(usdValue)) {
+      throw new Error(`Proposed top-up ($${usdValue.toFixed(2)}) exceeds remaining daily treasury budget ($${this.budgetTracker.getRemainingBudget().toFixed(2)})`);
+    }
+
+    // 4. Acquire Idempotency Lock
+    const lockKey = `replenish:${relayer.id}`;
+    if (!idempotency.acquireLock(lockKey)) {
+      throw new Error(`Concurrent replenishment already in progress for relayer '${relayer.id}'. Execution blocked.`);
+    }
+
+    try {
+      this.status = SentinelStatus.SIGNING_PENDING;
+
+      // 1. If swap required, execute swap first
+      if (incident.route === 'SWAP_THEN_TRANSFER') {
+        await this.client.callTool('paybox_request_swap', {
+          chain: incident.chain,
+          fromToken: 'USDC',
+          toToken: incident.token,
+          fromAmount: usdValue.toString()
+        });
+      }
+
+      // 2. Request transfer via PayBox
+      const transferRes = await this.client.callTool('paybox_request_transfer', {
+        chain: incident.chain,
+        token: incident.token,
+        amount: amount.toString(),
+        destinationAddress: incident.targetAddress
       });
 
-      // 4. Send operational receipt to the alerting thread
-      await this.client.callTool('reply_to_email', {
-        emailId: incident.emailId,
-        body: {
-          subject: `Re: [RESOLVED] Relayer Gas Refueled - ${incident.relayerId}`,
-          text: `Relayer ${incident.relayerName} successfully replenished.\nAmount: ${incident.proposedTopUp} ${incident.token}\nTx: ${settlementRes.txHash}`
+      const requestId = transferRes.requestId;
+      const signingUrl = transferRes.signing_handoff?.console_url;
+
+      // 3. Reconcile settlement
+      const settlementRes = await this.client.callTool('paybox_get_request', { requestId });
+
+      if (settlementRes.status === 'success') {
+        this.status = SentinelStatus.SETTLED_ON_CHAIN;
+        this.budgetTracker.recordDisbursement(usdValue, {
+          relayerId: relayer.id,
+          txHash: settlementRes.txHash
+        });
+
+        // 4. Send operational receipt to the alerting thread if emailId present
+        if (incident.emailId) {
+          try {
+            await this.client.callTool('reply_to_email', {
+              emailId: incident.emailId,
+              body: {
+                subject: `Re: [RESOLVED] Relayer Gas Refueled - ${relayer.id}`,
+                text: `Relayer ${relayer.name} successfully replenished.\nAmount: ${amount} ${incident.token}\nTx: ${settlementRes.txHash}`
+              }
+            });
+          } catch (_) {}
         }
-      });
 
-      // 5. Save audit draft
-      await this.client.callTool('save_draft', {
-        mailboxId: this.config.mailboxId,
-        body: {
-          subject: `[TREASURY AUDIT] Gas Top-Up: ${incident.relayerId}`,
-          text: `Executed top-up of ${incident.proposedTopUp} ${incident.token} to ${incident.targetAddress}. TxHash: ${settlementRes.txHash}`
+        // 5. Save audit draft
+        try {
+          await this.client.callTool('save_draft', {
+            mailboxId: this.config.mailboxId,
+            body: {
+              subject: `[TREASURY AUDIT] Gas Top-Up: ${relayer.id}`,
+              text: `Executed top-up of ${amount} ${incident.token} to ${incident.targetAddress}. TxHash: ${settlementRes.txHash}`
+            }
+          });
+        } catch (_) {}
+
+        // 6. Mark email read if emailId present
+        if (incident.emailId) {
+          try {
+            await this.client.callTool('update_email', {
+              emailId: incident.emailId,
+              body: { isRead: true }
+            });
+          } catch (_) {}
         }
-      });
 
-      // 6. Mark email read
-      await this.client.callTool('update_email', {
-        emailId: incident.emailId,
-        body: { isRead: true }
-      });
+        return {
+          status: SentinelStatus.SETTLED_ON_CHAIN,
+          requestId,
+          signingUrl,
+          txHash: settlementRes.txHash,
+          incident
+        };
+      }
 
       return {
-        status: SentinelStatus.SETTLED_ON_CHAIN,
+        status: SentinelStatus.SIGNING_PENDING,
         requestId,
         signingUrl,
-        txHash: settlementRes.txHash,
         incident
       };
+    } finally {
+      idempotency.releaseLock(lockKey);
     }
-
-    return {
-      status: SentinelStatus.SIGNING_PENDING,
-      requestId,
-      signingUrl,
-      incident
-    };
   }
 
   formatReplenishmentPreview(data) {

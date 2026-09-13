@@ -25,3 +25,7 @@ temp-edge-profile/
 # Binaries and temp images
 cloudflared.exe
 *.png
+
+# Video temporary outputs
+video/test_out/
+video/raw_scenes/

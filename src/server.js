@@ -152,6 +152,8 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.solana.com https://*.base.org https://*.publicnode.com; img-src 'self' data:; frame-ancestors 'none';");
 
   if (method === 'OPTIONS') {
     res.writeHead(204);
@@ -781,6 +783,12 @@ const server = http.createServer(async (req, res) => {
 
       const amount = rawAmount;
       const token = relayer.token;
+      if (relayer.maxSingleTopUp !== undefined && amount > relayer.maxSingleTopUp) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Amount (${amount} ${token}) exceeds relayer-specific single top-up cap of ${relayer.maxSingleTopUp} ${token}` }));
+        return;
+      }
+
       const rate = token === 'SOL' ? 150 : 2600;
       const usdValue = amount * rate;
 
@@ -796,57 +804,190 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      broadcastEvent('log', { message: `[PAYBOX] Operator triggered manual top-up of ${amount} ${token} for ${relayer.id}` });
+      const lockKey = `topup:${relayer.id}`;
+      if (!idempotency.acquireLock(lockKey)) {
+        res.writeHead(409, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Concurrent top-up already in progress for relayer '${relayer.id}'. Execution blocked.` }));
+        return;
+      }
 
-      const payboxRes = await agent.client.callTool('paybox_request_transfer', {
-        chain: relayer.chain,
-        token: token,
-        amount: amount.toString(),
-        destinationAddress: relayer.address
-      });
+      try {
+        broadcastEvent('log', { message: `[PAYBOX] Operator triggered manual top-up of ${amount} ${token} for ${relayer.id}` });
 
-      const execRes = await agent.client.callTool('paybox_get_request', {
-        requestId: payboxRes.requestId
-      });
+        const payboxRes = await agent.client.callTool('paybox_request_transfer', {
+          chain: relayer.chain,
+          token: token,
+          amount: amount.toString(),
+          destinationAddress: relayer.address
+        });
 
-      agent.budgetTracker.recordDisbursement(usdValue, {
-        relayerId: relayer.id,
-        chain: relayer.chain,
-        amount: `${amount} ${token}`,
-        txHash: execRes.txHash
-      });
+        const execRes = await agent.client.callTool('paybox_get_request', {
+          requestId: payboxRes.requestId
+        });
 
-      defaultHistory.recordEvent('MANUAL_TOPUP_EXECUTED', {
-        relayerId: relayer.id,
-        chain: relayer.chain,
-        amount: `${amount} ${token}`,
-        txHash: execRes.txHash,
-        status: execRes.status,
-        details: `Manual top-up by operator`
-      });
+        agent.budgetTracker.recordDisbursement(usdValue, {
+          relayerId: relayer.id,
+          chain: relayer.chain,
+          amount: `${amount} ${token}`,
+          txHash: execRes.txHash
+        });
 
-      await defaultNotifier.dispatch('TRANSFER_SETTLED', {
-        relayerId: relayer.id,
-        amount: `${amount} ${token}`,
-        txHash: execRes.txHash
-      });
+        defaultHistory.recordEvent('MANUAL_TOPUP_EXECUTED', {
+          relayerId: relayer.id,
+          chain: relayer.chain,
+          amount: `${amount} ${token}`,
+          txHash: execRes.txHash,
+          status: execRes.status,
+          details: `Manual top-up by operator`
+        });
 
-      broadcastEvent('replenishment_settled', {
-        status: execRes.status,
-        requestId: payboxRes.requestId,
-        txHash: execRes.txHash,
-        amount: `${amount} ${token}`
-      });
+        await defaultNotifier.dispatch('TRANSFER_SETTLED', {
+          relayerId: relayer.id,
+          amount: `${amount} ${token}`,
+          txHash: execRes.txHash
+        });
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        success: true,
-        requestId: payboxRes.requestId,
-        txHash: execRes.txHash,
-        amount: `${amount} ${token}`,
-        status: execRes.status
-      }));
-      return;
+        broadcastEvent('replenishment_settled', {
+          status: execRes.status,
+          requestId: payboxRes.requestId,
+          txHash: execRes.txHash,
+          amount: `${amount} ${token}`
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          requestId: payboxRes.requestId,
+          txHash: execRes.txHash,
+          amount: `${amount} ${token}`,
+          status: execRes.status
+        }));
+        return;
+      } finally {
+        idempotency.releaseLock(lockKey);
+      }
+    }
+
+    // POST /api/replenish (Dashboard manual top-up compatibility endpoint)
+    if (pathname === '/api/replenish' && method === 'POST') {
+      if (config.isEmergencyPaused) {
+        res.writeHead(423, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Disbursement blocked: Emergency circuit breaker is ACTIVE (${config.pauseReason || 'Halted by operator'})` }));
+        return;
+      }
+
+      const body = await parseJsonBody(req);
+      const { relayerId, amount: reqAmount, recipientAddress, token: reqToken, reason } = body;
+
+      const relayer = config.relayers.find(r => 
+        (relayerId && r.id === relayerId) || 
+        (recipientAddress && r.address.toLowerCase() === recipientAddress.toLowerCase())
+      );
+
+      if (!relayer) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Security Violation: Target relayer or recipient address is not authorized in allowlist' }));
+        return;
+      }
+
+      if (!relayer.enabled) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Relayer '${relayer.id}' is currently disabled` }));
+        return;
+      }
+
+      const rawAmount = reqAmount !== undefined ? Number(reqAmount) : Number(relayer.targetBalance);
+      if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Top-up amount must be a positive finite number' }));
+        return;
+      }
+
+      const amount = rawAmount;
+      const token = relayer.token;
+      if (relayer.maxSingleTopUp !== undefined && amount > relayer.maxSingleTopUp) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Amount (${amount} ${token}) exceeds relayer-specific single top-up cap of ${relayer.maxSingleTopUp} ${token}` }));
+        return;
+      }
+
+      const rate = token === 'SOL' ? 150 : 2600;
+      const usdValue = amount * rate;
+
+      if (usdValue > (config.policy.maxSingleTopUpUsd || 150)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Amount ($${usdValue.toFixed(2)}) exceeds single top-up cap of $${config.policy.maxSingleTopUpUsd}` }));
+        return;
+      }
+
+      if (!agent.budgetTracker.canAfford(usdValue)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Amount ($${usdValue.toFixed(2)}) exceeds remaining daily budget` }));
+        return;
+      }
+
+      const lockKey = `replenish:${relayer.id}`;
+      if (!idempotency.acquireLock(lockKey)) {
+        res.writeHead(409, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `Concurrent replenishment already in progress for relayer '${relayer.id}'. Execution blocked.` }));
+        return;
+      }
+
+      try {
+        broadcastEvent('log', { message: `[PAYBOX] Operator triggered manual replenishment of ${amount} ${token} for ${relayer.id} (${reason || 'operator request'})` });
+
+        const payboxRes = await agent.client.callTool('paybox_request_transfer', {
+          chain: relayer.chain,
+          token: token,
+          amount: amount.toString(),
+          destinationAddress: relayer.address
+        });
+
+        const execRes = await agent.client.callTool('paybox_get_request', {
+          requestId: payboxRes.requestId
+        });
+
+        agent.budgetTracker.recordDisbursement(usdValue, {
+          relayerId: relayer.id,
+          chain: relayer.chain,
+          amount: `${amount} ${token}`,
+          txHash: execRes.txHash
+        });
+
+        defaultHistory.recordEvent('MANUAL_TOPUP_EXECUTED', {
+          relayerId: relayer.id,
+          chain: relayer.chain,
+          amount: `${amount} ${token}`,
+          txHash: execRes.txHash,
+          status: execRes.status,
+          details: reason || 'Manual top-up via /api/replenish'
+        });
+
+        await defaultNotifier.dispatch('TRANSFER_SETTLED', {
+          relayerId: relayer.id,
+          amount: `${amount} ${token}`,
+          txHash: execRes.txHash
+        });
+
+        broadcastEvent('replenishment_settled', {
+          status: execRes.status,
+          requestId: payboxRes.requestId,
+          txHash: execRes.txHash,
+          amount: `${amount} ${token}`
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          requestId: payboxRes.requestId,
+          txHash: execRes.txHash,
+          amount: `${amount} ${token}`,
+          status: execRes.status
+        }));
+        return;
+      } finally {
+        idempotency.releaseLock(lockKey);
+      }
     }
 
 
@@ -1118,10 +1259,10 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // POST /api/emergency-pause (Circuit Breaker)
-    if (pathname === '/api/emergency-pause' && method === 'POST') {
+    // POST /api/emergency-pause & POST /api/emergency/pause (Circuit Breaker)
+    if ((pathname === '/api/emergency-pause' || pathname === '/api/emergency/pause') && method === 'POST') {
       const body = await parseJsonBody(req);
-      const isPaused = Boolean(body.paused);
+      const isPaused = body.pause !== undefined ? Boolean(body.pause) : Boolean(body.paused);
       const reason = body.reason || (isPaused ? 'Operator manual circuit breaker activation' : '');
 
       config.isEmergencyPaused = isPaused;
@@ -1283,9 +1424,11 @@ process.on('unhandledRejection', (reason) => {
   console.error('[CRITICAL] Unhandled rejection:', reason);
 });
 
-server.listen(PORT, () => {
-  console.log(`[INFO] Server listening on http://localhost:${PORT}`);
-  console.log(`[INFO] Mailbox: ${config.mailboxId} | Daily Cap: $${config.dailyMaxUsdCap} USD`);
-});
+if (!process.env.NODE_TEST_CONTEXT) {
+  server.listen(PORT, () => {
+    console.log(`[INFO] Server listening on http://localhost:${PORT}`);
+    console.log(`[INFO] Mailbox: ${config.mailboxId} | Daily Cap: $${config.dailyMaxUsdCap} USD`);
+  });
+}
 
 export { server };

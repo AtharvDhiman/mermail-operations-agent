@@ -1,0 +1,164 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Standardized SKILL.md Deliverable</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      width: 1920px;
+      height: 1080px;
+      background: radial-gradient(circle at 50% 20%, #121826 0%, #07090e 100%);
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 0;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      z-index: 1;
+    }
+    .tag {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: #c084fc;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 42px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .repo-card {
+      width: 1500px;
+      background: rgba(15, 20, 32, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+      z-index: 1;
+    }
+    .repo-bar {
+      background: rgba(255, 255, 255, 0.04);
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .dot { width: 14px; height: 14px; border-radius: 50%; }
+    .dot-r { background: #ef4444; }
+    .dot-y { background: #f59e0b; }
+    .dot-g { background: #10b981; }
+    .repo-path {
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 15px;
+      color: #94a3b8;
+      margin-left: 20px;
+    }
+    .repo-path span { color: #38bdf8; font-weight: 600; }
+    .code-container {
+      padding: 30px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+    .code-box {
+      background: #090d16;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 24px;
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #e2e8f0;
+      overflow: hidden;
+    }
+    .kw { color: #f43f5e; font-weight: 600; }
+    .str { color: #10b981; }
+    .prop { color: #38bdf8; }
+    .comment { color: #64748b; font-style: italic; }
+    .highlight-line {
+      background: rgba(245, 158, 11, 0.15);
+      border-left: 3px solid #f59e0b;
+      padding-left: 8px;
+      margin: 4px -8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+  <div class="header">
+    <div class="tag">Standardized Agent Skill Deliverable</div>
+    <h1>Reusable Across OpenClaw & Agent Frameworks</h1>
+  </div>
+
+  <div class="repo-card">
+    <div class="repo-bar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <div class="repo-path">github.com/AtharvDhiman/mermail-operations-agent / <span>skills/mermail-operations-agent/SKILL.md</span></div>
+    </div>
+    <div class="code-container">
+      <div class="code-box">
+        <div class="comment"># Skill Specification & Frontmatter</div>
+        <div><span class="kw">---</span></div>
+        <div><span class="prop">name</span>: <span class="str">mermail-operations-agent</span></div>
+        <div><span class="prop">description</span>: <span class="str">Autonomous operations agent for intelligent inbox triage, DAG planning, and human dual-control.</span></div>
+        <div><span class="prop">metadata</span>:</div>
+        <div>&nbsp;&nbsp;<span class="prop">openclaw</span>:</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">primaryEnv</span>: <span class="str">MERMAIL_API_KEY</span></div>
+        <div><span class="kw">---</span></div>
+        <br>
+        <div class="comment"># Core Agent Capabilities</div>
+        <div>## 4 Specialized Modes</div>
+        <div>1. <span class="prop">SUPPORT</span>: Automated ticket triage & SLA tracking</div>
+        <div>2. <span class="prop">SALES_GTM</span>: Lead qualification with ICP scoring</div>
+        <div>3. <span class="prop">SCHEDULING</span>: Calendar constraint resolution</div>
+        <div>4. <span class="prop">GENERAL_OPS</span>: Relayer gas monitoring & PayBox settlement</div>
+      </div>
+
+      <div class="code-box">
+        <div class="comment"># Deterministic Safety Invariants</div>
+        <div>## Write Safety Rules</div>
+        <br>
+        <div><span class="prop">SAFE (Auto-Executed):</span></div>
+        <div>• <span class="str">list_mailboxes</span>, <span class="str">list_emails</span>, <span class="str">get_email</span></div>
+        <div>• <span class="str">paybox_get_portfolio</span>, <span class="str">paybox_get_request</span></div>
+        <br>
+        <div class="highlight-line">
+          <div><span class="prop">HIGH_RISK (Dual-Control Mandatory):</span></div>
+          <div>• <span class="str">paybox_request_transfer</span> (128-bit Token)</div>
+          <div>• <span class="str">send_email</span> / <span class="str">reply_to_email</span> (Operator Approval)</div>
+        </div>
+        <br>
+        <div>## Financial Invariant:</div>
+        <div>• $500 USD rolling 24h daily spend limit</div>
+        <div>• Immediate Emergency Pause Circuit Breaker</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

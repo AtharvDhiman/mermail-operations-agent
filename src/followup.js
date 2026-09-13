@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { logger } from './logger.js';
 import { EmailComposer } from './composer.js';
+import { memory } from './memory.js';
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const FOLLOWUPS_FILE = path.join(DATA_DIR, 'followups.json');
@@ -59,7 +60,9 @@ export class FollowUpEngine {
     escalateOnMax = false
   }) {
     const id = `FUP-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
-    const scheduledDate = new Date(Date.now() + cadenceDays * 24 * 60 * 60 * 1000).toISOString();
+    const safeCadence = (Number.isFinite(Number(cadenceDays)) && Number(cadenceDays) > 0) ? Number(cadenceDays) : 3;
+    const safeMax = (Number.isFinite(Number(maxFollowups)) && Number(maxFollowups) > 0) ? Number(maxFollowups) : 2;
+    const scheduledDate = new Date(Date.now() + safeCadence * 24 * 60 * 60 * 1000).toISOString();
 
     const record = {
       id,
@@ -68,9 +71,9 @@ export class FollowUpEngine {
       recipient,
       subject,
       category,
-      cadenceDays,
+      cadenceDays: safeCadence,
       scheduledDate,
-      maxFollowups,
+      maxFollowups: safeMax,
       currentCount: 0,
       stopOnReply,
       escalateOnMax,
@@ -83,6 +86,11 @@ export class FollowUpEngine {
 
     logger.info(`Scheduled follow-up [${id}] for ${recipient} in ${cadenceDays} day(s)`, { taskId, threadId });
     return record;
+  }
+
+  getFollowup(id) {
+    if (!id) return null;
+    return this.followups.find(f => f.id === id) || null;
   }
 
   /**
@@ -116,6 +124,15 @@ export class FollowUpEngine {
         fup.cancelReason = `Inbound response received from ${sender}`;
         cancelled.push(fup);
         logger.info(`Auto-cancelled follow-up [${fup.id}] - reply received from ${sender}`, { threadId });
+
+        if (fup.taskId) {
+          const task = memory.getTask(fup.taskId);
+          if (task && task.state === 'WAITING_FOR_REPLY') {
+            task.state = 'COMPLETED';
+            task.completedAt = new Date().toISOString();
+            memory.saveTask(task.id, task);
+          }
+        }
       }
     }
 
@@ -132,6 +149,15 @@ export class FollowUpEngine {
     const currentTime = now.getTime();
     return this.followups.filter(fup => {
       if (fup.status !== 'SCHEDULED') return false;
+      if (fup.taskId) {
+        const task = memory.getTask(fup.taskId);
+        if (task && (task.state === 'CANCELLED' || task.state === 'FAILED')) {
+          fup.status = 'CANCELLED';
+          fup.cancelledAt = new Date().toISOString();
+          fup.cancelReason = `Associated task is ${task.state}`;
+          return false;
+        }
+      }
       const dueTime = new Date(fup.scheduledDate).getTime();
       return dueTime <= currentTime;
     });
@@ -146,6 +172,17 @@ export class FollowUpEngine {
       return null;
     }
 
+    if (fup.taskId) {
+      const task = memory.getTask(fup.taskId);
+      if (task && (task.state === 'CANCELLED' || task.state === 'FAILED')) {
+        fup.status = 'CANCELLED';
+        fup.cancelledAt = new Date().toISOString();
+        fup.cancelReason = `Associated task is ${task.state}`;
+        this.save();
+        return null;
+      }
+    }
+
     fup.currentCount += 1;
 
     if (fup.currentCount >= fup.maxFollowups) {
@@ -153,13 +190,20 @@ export class FollowUpEngine {
         fup.status = 'ESCALATED';
         fup.escalatedAt = new Date().toISOString();
         logger.warn(`Follow-up cadence exhausted for [${fup.id}] without response; escalated to operator`, { taskId: fup.taskId });
+        if (fup.taskId) {
+          const task = memory.getTask(fup.taskId);
+          if (task && task.state === 'WAITING_FOR_REPLY') {
+            task.state = 'ESCALATED';
+            memory.saveTask(task.id, task);
+          }
+        }
       } else {
         fup.status = 'COMPLETED';
         fup.completedAt = new Date().toISOString();
       }
     } else {
-      // Reschedule for next cadence (e.g. +4 days to reach Day 7)
-      fup.scheduledDate = new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString();
+      // Reschedule for next cadence
+      fup.scheduledDate = new Date(Date.now() + (fup.cadenceDays || 3) * 24 * 60 * 60 * 1000).toISOString();
     }
 
     const draft = EmailComposer.compose({
@@ -177,6 +221,22 @@ export class FollowUpEngine {
       followup: fup,
       draft
     };
+  }
+
+  cancelForTask(taskId, reason = 'Task cancelled') {
+    if (!taskId) return 0;
+    let count = 0;
+    for (const fup of this.followups) {
+      if (fup.taskId === taskId && fup.status === 'SCHEDULED') {
+        fup.status = 'CANCELLED';
+        fup.cancelledAt = new Date().toISOString();
+        fup.cancelReason = reason;
+        count += 1;
+        logger.info(`Cancelled follow-up [${fup.id}] for task ${taskId}: ${reason}`);
+      }
+    }
+    if (count > 0) this.save();
+    return count;
   }
 
   cancel(fupId, reason = 'Operator cancelled') {

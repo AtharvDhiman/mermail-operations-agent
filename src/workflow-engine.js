@@ -61,6 +61,14 @@ export class WorkflowEngine {
       reason
     });
     task.state = toState;
+    if (toState === WorkflowState.CANCELLED || toState === WorkflowState.FAILED) {
+      if (typeof safety.cancelForTask === 'function') {
+        safety.cancelForTask(task.id, reason || `Task transitioned to ${toState}`);
+      }
+      if (typeof followup.cancelForTask === 'function') {
+        followup.cancelForTask(task.id, reason || `Task transitioned to ${toState}`);
+      }
+    }
     memory.saveTask(task.id, task);
     return task;
   }
@@ -89,7 +97,9 @@ export class WorkflowEngine {
     });
 
     // 1. Security scan for prompt injection
-    const textToScan = `${email.subject || ''} ${email.body || email.content || ''}`;
+    const rawBody = email.body || email.content || email.text || '';
+    const bodyStr = typeof rawBody === 'object' ? (rawBody.text || rawBody.content || rawBody.html || '') : String(rawBody);
+    const textToScan = `${email.subject || ''} ${bodyStr}`;
     const injectionCheck = safety.constructor.detectPromptInjection(textToScan);
     if (injectionCheck.detected) {
       const taskId = `SEC-ALERT-${Date.now()}`;
