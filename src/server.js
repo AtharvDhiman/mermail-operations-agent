@@ -147,7 +147,7 @@ const server = http.createServer(async (req, res) => {
         realWalletConnected: connectedRealWallet ? true : false,
         activeTasks: memory.listActiveTasks().length,
         pendingApprovals: safety.listPendingApprovals().length,
-        testsPassing: 67
+        testsPassing: 97
       }));
       return;
     }
