@@ -39,8 +39,36 @@
       --font-mono: 'JetBrains Mono', monospace;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      scrollbar-width: thin;
+      scrollbar-color: rgba(245, 158, 11, 0.4) rgba(10, 12, 18, 0.8);
+    }
     html { scroll-behavior: smooth; }
+
+    /* Custom Web3 Cyberpunk Scrollbars (Replaces harsh white browser default) */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(8, 9, 13, 0.95);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.45) 0%, rgba(245, 158, 11, 0.2) 100%);
+      border-radius: 9999px;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      transition: all 0.2s ease;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.85) 0%, rgba(251, 191, 36, 0.6) 100%);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+    ::-webkit-scrollbar-corner {
+      background: transparent;
+    }
     body {
       background-color: var(--bg-base);
       color: var(--text-primary);
@@ -667,6 +695,24 @@
       background: #090b10;
       overflow-y: auto;
       max-height: 640px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(245, 158, 11, 0.45) rgba(9, 11, 16, 0.95);
+    }
+    .workbench-right::-webkit-scrollbar {
+      width: 5px;
+    }
+    .workbench-right::-webkit-scrollbar-track {
+      background: rgba(9, 11, 16, 0.95);
+      border-radius: 9999px;
+    }
+    .workbench-right::-webkit-scrollbar-thumb {
+      background: rgba(245, 158, 11, 0.35);
+      border-radius: 9999px;
+      transition: background 0.2s ease;
+    }
+    .workbench-right::-webkit-scrollbar-thumb:hover {
+      background: rgba(245, 158, 11, 0.75);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
     }
 
     .dag-stage-box {
@@ -1443,6 +1489,21 @@
       font-size: 12px;
       line-height: 1.6;
       color: #94a3b8;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(56, 189, 248, 0.4) rgba(5, 6, 8, 0.95);
+    }
+    .terminal-body::-webkit-scrollbar {
+      width: 4px;
+    }
+    .terminal-body::-webkit-scrollbar-track {
+      background: rgba(5, 6, 8, 0.95);
+    }
+    .terminal-body::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.35);
+      border-radius: 9999px;
+    }
+    .terminal-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(56, 189, 248, 0.75);
     }
     .term-line { margin-bottom: 4px; word-break: break-all; }
     .term-time { color: var(--text-tertiary); margin-right: 6px; }
