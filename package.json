@@ -20,7 +20,9 @@
     "setup": "node bin/cli.js doctor",
     "test": "node --test tests/**/*.test.mjs",
     "test:skill": "node tests/validate-skill.mjs",
-    "validate": "node tests/validate-skill.mjs && node --test tests/**/*.test.mjs"
+    "test:e2e": "node tests/agentic-browser-runner.mjs",
+    "test:all": "node --test tests/**/*.test.mjs && node tests/agentic-browser-runner.mjs",
+    "validate": "node tests/validate-skill.mjs && node --test tests/**/*.test.mjs && node tests/agentic-browser-runner.mjs"
   },
   "keywords": [
     "mermail",

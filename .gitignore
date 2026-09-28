@@ -32,3 +32,4 @@ video/raw_scenes/
 video/processed_scenes/
 *.mp4
 *.webm
+result.json
