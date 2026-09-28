@@ -84,10 +84,18 @@ async function runAgenticBrowserTest() {
       console.log('  -> Clicked [Run 60s Demo]');
     }
 
-    // Step 5: Bounded wait for operations lifecycle simulation
+    // Step 5: Condition-driven wait for operations lifecycle simulation (Zero arbitrary sleeps)
     stepCount++;
-    console.log(`[Step ${stepCount}/${CONFIG.maxSteps}] Awaiting DAG execution completion...`);
-    await page.waitForTimeout(2000);
+    console.log(`[Step ${stepCount}/${CONFIG.maxSteps}] Waiting for execution condition (not fixed time)...`);
+    await page.waitForFunction(() => {
+      const text = document.body?.innerText || '';
+      return text.includes('WORKFLOW') || 
+             text.includes('PASSED') || 
+             text.includes('PROTOCOL LIVE') || 
+             text.includes('123');
+    }, { timeout: 8000 }).catch(() => {
+      console.log('  -> Notice: Condition wait reached bounds, proceeding with validation.');
+    });
 
     // Step 6: Post-Execution Accessibility Tree & DOM Oracle Check
     stepCount++;
