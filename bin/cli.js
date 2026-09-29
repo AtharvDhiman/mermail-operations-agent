@@ -115,9 +115,23 @@ async function main() {
       await runReset();
       break;
 
+    case 'escrow':
+      await runEscrowSubcommand(positionalArgs, rawArgs);
+      break;
+
     default:
       showHelp();
       break;
+  }
+}
+
+async function runEscrowSubcommand(args, allArgs) {
+  const { executeCommand, startInteractiveShell } = await import('./escrow-cli.js');
+  const subTokens = allArgs.slice(allArgs.indexOf('escrow') + 1);
+  if (subTokens.length === 0 || subTokens[0] === 'interactive' || subTokens[0] === 'shell') {
+    startInteractiveShell();
+  } else {
+    await executeCommand(subTokens.join(' '));
   }
 }
 
@@ -143,6 +157,7 @@ Commands:
   followups                             Inspect active multi-day follow-up cadences and reply monitors
   audit                                 Display recent immutable audit log records
   demo                                  Run 60-second zero-config end-to-end judge demonstration
+  escrow [command]                      Agent Escrow & Arbitration Desk (list|status|create|fund|deliver|release|dispute|arbitrate|demo)
   reset                                 Reset all task memory, approvals, followups, and audit state
 
 Flags:

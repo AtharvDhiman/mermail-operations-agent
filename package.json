@@ -6,11 +6,15 @@
   "main": "src/sentinel-agent.js",
   "bin": {
     "mermail-agent": "bin/cli.js",
-    "mermail-sentinel": "bin/cli.js"
+    "mermail-sentinel": "bin/cli.js",
+    "mermail-escrow": "bin/escrow-cli.js"
   },
   "scripts": {
     "start": "node bin/cli.js",
     "agent": "node bin/cli.js",
+    "escrow": "node bin/escrow-cli.js",
+    "escrow:cli": "node bin/escrow-cli.js interactive",
+    "escrow:demo": "node demo/run-escrow-demo.mjs",
     "serve": "node src/server.js",
     "live": "node src/server.js",
     "tunnel": ".\\cloudflared.exe tunnel --url http://localhost:3333",
