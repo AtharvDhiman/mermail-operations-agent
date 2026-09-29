@@ -1,11 +1,11 @@
 # Mermail Autonomous Operations Agent
 
 [![Mermail Skills Compatible](https://img.shields.io/badge/mermail--skills-compatible-blue)](https://github.com/Nudgen-Marketing/mermail-skills)
-[![Tests Passing](https://img.shields.io/badge/tests-97%20passed%20(42%20suites)-success)](tests/)
-[![Skill Validation](https://img.shields.io/badge/skill--validation-100%25%20passed-success)](tests/validate-skill.mjs)
+[![Tests Passing](https://img.shields.io/badge/tests-131%20passed%20(53%20suites)-success)](tests/)
+[![Skill Validation](https://img.shields.io/badge/skill--validation-3%20skills%20(100%25%20passed)-success)](tests/validate-skill.mjs)
 [![License: MIT](https://img.shields.io/badge/license-MIT-informational)](LICENSE)
 
-An enterprise-grade autonomous operations agent powered by **Mermail** and the **Model Context Protocol (MCP)**. It transforms an AI agent's inbox and Agent Wallet into an end-to-end operational workforce that triages incoming communications, extracts structured intent, decomposes goals into verified DAG steps, executes actions with dual-control human authorization, manages persistent multi-day follow-up cadences, detects thread-level contradictions, and maintains an immutable audit trail.
+An enterprise-grade autonomous operations agent and meta-agent infrastructure powered by **Mermail** and the **Model Context Protocol (MCP)**. It features the flagship **Mermail Agent Escrow & Arbitration Desk** (meta-agent commerce infrastructure using Inbox-as-a-Database and PayBox Agent Wallet custody), alongside autonomous operations engines for triage, task planning, and relayer liquidity sentinels.
 
 ```
 EMAIL / MESSAGE ➔ INTENT UNDERSTANDING ➔ TASK PLANNING ➔ ACTION EXECUTION ➔ VERIFICATION ➔ FOLLOW-UP ➔ FINAL REPORT
@@ -235,15 +235,43 @@ cp .env.example .env
 
 ---
 
+## Flagship Skill: Mermail Agent Escrow & Arbitration Desk
+
+Located in [`skills/mermail-agent-escrow-arbitration/`](skills/mermail-agent-escrow-arbitration/), this skill introduces **Meta-Agent Commerce Infrastructure** for the agent economy.
+
+Unlike single-agent email assistants, the Desk acts as an autonomous third-party escrow agent and dispute arbitrator between AI agents conducting business.
+
+### Key Architectural Invariants
+1. **Inbox-as-a-Database**: Pure Agent Skills have no external database. The Desk uses Mermail email threads indexed by Deal ID (`[ESC-YYYY-NNN]`) as an immutable, cryptographically verifiable state machine. Calling `search_emails({"query":"subject:ESC-YYYY-NNN"})` reconstructs the entire transaction history.
+2. **PayBox Agent Wallet Custody**: Funds are deposited into Agent Wallet custody (`get_paybox_connection`), locked during execution, and settled conditionally via `paybox_request_transfer`.
+3. **4-Part AI Arbitration Framework**: Contested deliverables are evaluated across Timeliness (25%), Spec Match (25%), Functional Integrity (35%), and Revisions (15%), enabling automated pro-rata split payouts.
+
+### Terminal & Bash Quickstart
+```bash
+# Launch interactive terminal shell (REPL):
+npm run escrow:cli
+
+# Run complete end-to-end multi-agent protocol demo:
+npm run demo:escrow
+
+# Headless CLI commands:
+node bin/escrow-cli.js list
+node bin/escrow-cli.js status ESC-2026-001
+node bin/escrow-cli.js create --buyer buyer@mermail.app --provider dev@mermail.app --amount 50.00
+```
+
+---
+
 ## Upstream Skill Compliance
 
-This repository includes official skill packages conforming strictly to `Nudgen-Marketing/mermail-skills`:
-- `skills/mermail-operations-agent/SKILL.md`: Under 500 lines, YAML frontmatter, official Mermail tools only.
+This repository includes 3 official skill packages conforming strictly to `Nudgen-Marketing/mermail-skills`:
+- `skills/mermail-agent-escrow-arbitration/SKILL.md`: Autonomous Escrow Counterparty & AI Dispute Resolution Desk.
+- `skills/mermail-operations-agent/SKILL.md`: Enterprise autonomous operations workforce agent.
 - `skills/mermail-relayer-sentinel/SKILL.md`: Upstream-validated Web3 gas and treasury operations sentinel.
 
-Both skills pass the official upstream test validator:
+All 3 skills pass the official upstream test validator:
 ```bash
-node tests/validate-skill.mjs
+npm run test:skill
 ```
 
 ---
@@ -251,3 +279,4 @@ node tests/validate-skill.mjs
 ## License
 
 MIT License. Developed for the [Superteam Earn Mermail Agent Skill Bounty](https://superteam.fun/earn/listing/build-and-demo-a-mermail-agent-skill).
+
