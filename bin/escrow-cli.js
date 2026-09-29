@@ -159,8 +159,22 @@ function parseFlags(tokens) {
 }
 
 export async function executeCommand(input) {
-  const trimmed = input.trim();
+  let trimmed = input.trim();
   if (!trimmed) return;
+
+  // Strip prefixes if user pasted full terminal command inside the interactive shell
+  if (trimmed.startsWith('node bin/escrow-cli.js ')) {
+    trimmed = trimmed.replace('node bin/escrow-cli.js ', '').trim();
+  } else if (trimmed.startsWith('node bin/escrow-cli ')) {
+    trimmed = trimmed.replace('node bin/escrow-cli ', '').trim();
+  } else if (trimmed.startsWith('npm run escrow:cli ')) {
+    trimmed = trimmed.replace('npm run escrow:cli ', '').trim();
+  } else if (trimmed.startsWith('node ')) {
+    const parts = trimmed.split(/\s+/);
+    if (parts.length > 2 && (parts[1].includes('cli') || parts[1].includes('escrow') || parts[1].includes('.js'))) {
+      trimmed = parts.slice(2).join(' ').trim();
+    }
+  }
 
   const tokens = trimmed.split(/\s+/);
   const cmd = tokens[0].toLowerCase();
